@@ -10,7 +10,7 @@ def dot(a, b):
 
     c = np.array(
         tuple(
-            sum(map(lambda i: i[0] * i[1], zip(a[col_idx], b[:, row_idx])))
+            sum(x*y for x, y in zip(a[col_idx], b[:, row_idx]))
             for col_idx in range(b_shape[1])
             for row_idx in range(a_shape[0])
         )

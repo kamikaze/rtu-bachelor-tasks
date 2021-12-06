@@ -2,21 +2,21 @@ import numpy as np
 
 
 def dot(a, b):
-    a_shape = np.shape(a)
-    b_shape = np.shape(b)
+    c_height = np.shape(a)[0]
+    c_width = np.shape(b)[1]
 
-    if a_shape[0] != b_shape[1]:
+    if c_height != c_width:
         raise ValueError(f'Wrong shape of matrix: {np.shape(a)=} {np.shape(b)=}')
 
     c = np.array(
         tuple(
             sum(x*y for x, y in zip(a[col_idx], b[:, row_idx]))
-            for col_idx in range(b_shape[1])
-            for row_idx in range(a_shape[0])
+            for col_idx in range(c_width)
+            for row_idx in range(c_height)
         )
     )
 
-    return c.reshape((a_shape[0], b_shape[1]))
+    return c.reshape((c_height, c_width))
 
 
 def main():

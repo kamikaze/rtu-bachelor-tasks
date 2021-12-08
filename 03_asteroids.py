@@ -12,8 +12,9 @@ def rotation_mat(degrees: float):
     :param degrees:
     :return:
     """
-    c = np.cos(degrees)
-    s = np.sin(degrees)
+    theta = np.radians(degrees)
+    c = np.cos(theta)
+    s = np.sin(theta)
 
     return np.array([
         [c, -s, 0],
@@ -23,9 +24,11 @@ def rotation_mat(degrees: float):
 
 
 def translation_mat(dx: float, dy: float):
-    t = np.identity(3)
-
-    return t
+    return np.array([
+        [1, 0, dx],
+        [0, 1, dy],
+        [0, 0, 1],
+    ])
 
 
 def scale_mat(sx: float, sy: float):
@@ -66,7 +69,7 @@ def vec2d_to_vec3d(vec2d):
         (0, 0,),
     ))
 
-    return np.dot(i, vec2d[:, None]) + np.array([0, 0, 0, ])
+    return dot(i, vec2d[:, None]).transpose()[0] + np.array([0, 0, 1, ])
 
 
 def vec3d_to_vec2d(vec3d):
@@ -75,7 +78,7 @@ def vec3d_to_vec2d(vec3d):
         (0, 1, 0,),
     ))
 
-    return dot(i, vec3d)
+    return dot(i, vec3d[:, None])
 
 
 class Character:
@@ -84,7 +87,8 @@ class Character:
 
         self._angle: float = np.random.random() * np.pi
         self._speed: float = 0.1
-        self._pos: np.array = np.zeros((2,))
+        # self._pos: np.array = np.zeros((2,))
+        self._pos: np.array = np.array((5.0, 0.0,))
         self._dir_init: np.array = np.array([0.0, 1.0])
         self._dir: np.array = np.array(self._dir_init)
 
@@ -93,7 +97,7 @@ class Character:
         self._c: np.ndarray = np.identity(3)
         self._r: np.ndarray = np.identity(3)
         self._s: np.ndarray = np.identity(3)
-        self._t: np.ndarray = np.identity(3)
+        self._t: np.ndarray = translation_mat(*self._pos)
 
         self.generate_geometry()
 
@@ -124,7 +128,12 @@ class Character:
             y_values = []
 
             for vec2d in self._geometry:
-                vec2d = vec3d_to_vec2d(dot(self._r, vec2d_to_vec3d(vec2d)))
+                vec3d = vec2d_to_vec3d(vec2d)
+                c = dot(self._r, self._t)
+                vec3d = np.dot(c, vec3d)
+
+                vec2d = vec3d_to_vec2d(vec3d)
+
                 x_values.append(vec2d[0])
                 y_values.append(vec2d[1])
 

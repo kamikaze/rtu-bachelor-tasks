@@ -105,7 +105,7 @@ class Character:
         self.generate_geometry()
 
     def _update_c(self):
-        self._c = dot(dot(self._s, self._r), self._t)
+        self._c = dot(dot(self._s, self._t), self._r)
 
     @property
     def angle(self):

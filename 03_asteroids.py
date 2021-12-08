@@ -98,8 +98,12 @@ class Character:
         self._r: np.ndarray = np.identity(3)
         self._s: np.ndarray = np.identity(3)
         self._t: np.ndarray = translation_mat(*self._pos)
+        self._update_c()
 
         self.generate_geometry()
+
+    def _update_c(self):
+        self._c = dot(dot(self._s, self._r), self._t)
 
     @property
     def angle(self):
@@ -109,6 +113,7 @@ class Character:
     def angle(self, angle: float):
         self._angle = angle
         self._r = rotation_mat(angle)
+        self._update_c()
 
     @property
     def speed(self):
@@ -129,8 +134,7 @@ class Character:
 
             for vec2d in self._geometry:
                 vec3d = vec2d_to_vec3d(vec2d)
-                c = dot(self._r, self._t)
-                vec3d = np.dot(c, vec3d)
+                vec3d = np.dot(self._c, vec3d)
 
                 vec2d = vec3d_to_vec2d(vec3d)
 

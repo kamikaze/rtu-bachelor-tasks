@@ -32,9 +32,11 @@ def translation_mat(dx: float, dy: float):
 
 
 def scale_mat(sx: float, sy: float):
-    s = np.identity(3)
-
-    return s
+    return np.array([
+        [sx, 0, 0],
+        [0, sy, 0],
+        [0, 0, 1],
+    ])
 
 
 def dot(a, b):

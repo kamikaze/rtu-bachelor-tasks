@@ -113,7 +113,13 @@ class Character:
 
     @angle.setter
     def angle(self, angle: float):
-        self._angle = angle
+        if angle < 0:
+            self._angle = angle + 360
+        elif angle >= 360:
+            self.angle = angle - 360
+        else:
+            self._angle = angle
+
         self._r = rotation_mat(angle)
         self._update_c()
 

@@ -84,13 +84,13 @@ def vec3d_to_vec2d(vec3d):
 
 
 class Character:
-    def __init__(self):
+    def __init__(self, pos: Optional[np.array] = None):
         self._geometry: Optional[np.array] = None
 
         self._angle: float = np.random.random() * np.pi
         self._speed: float = 0.1
-        # self._pos: np.array = np.zeros((2,))
-        self._pos: np.array = np.array((5.0, 0.0,))
+        self._accel_vec: np.array = np.zeros((2,))
+        self._pos: np.array = np.zeros((2,)) if pos is None else pos
         self._dir_init: np.array = np.array([0.0, 1.0])
         self._dir: np.array = np.array(self._dir_init)
 
@@ -135,6 +135,13 @@ class Character:
     def generate_geometry(self):
         pass
 
+    def move(self):
+        print(self._pos)
+        self._pos += np.array([0.1, 0.1])
+        self._t = translation_mat(*self._pos)
+        self._update_c()
+        # self._pos = self._pos * self._speed * self._angle
+
     def draw(self):
         if self._geometry is not None:
             x_values = []
@@ -164,7 +171,12 @@ class Player(Character):
 
 class Asteroid(Character):
     def generate_geometry(self):
-        pass
+        self._geometry = np.array((
+            (-2, 0,),
+            (1, 0,),
+            (0, 1,),
+            (-2, 0,),
+        ))
 
 
 IS_RUNNING: bool = False
@@ -189,8 +201,9 @@ def main():
     plt.rcParams['figure.figsize'] = (10, 10,)
     plt.ion()
 
-    PLAYER = Player()
-    characters = [PLAYER, Asteroid(), Asteroid()]
+    PLAYER = Player(np.array((0., 0.,)))
+    # characters = [PLAYER, Asteroid(np.random.rand(2) * 10), Asteroid(np.random.rand(2) * 10)]
+    characters = [PLAYER, ]
     IS_RUNNING = True
 
     fig, _ = plt.subplots()
@@ -202,6 +215,7 @@ def main():
         plt.ylim(-10, 10)
 
         for character in characters:
+            character.move()
             character.draw()
 
             if isinstance(character, Player):

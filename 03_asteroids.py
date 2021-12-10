@@ -87,10 +87,11 @@ class Character:
     def __init__(self, pos: Optional[np.array] = None):
         self._geometry: Optional[np.array] = None
 
-        self._angle: float = 90.
+        self._angle: float = 0.
         self._speed: float = 0.01
         self._accel_vec: np.array = np.zeros((2,))
         self._pos: np.array = np.zeros((2,)) if pos is None else pos
+
         self._dir_init: np.array = np.array([0.0, 1.0])
         self._dir: np.array = np.array(self._dir_init)
 
@@ -108,7 +109,9 @@ class Character:
         self._c = dot(dot(self._s, self._t), self._r)
 
     def apply_thrust(self, thrust: float):
-        thrust_vec = np.array([thrust * np.cos(self._angle), thrust * np.sin(self._angle)])
+        angle = np.radians(self._angle + 90)
+        thrust_vec = np.array([thrust * np.cos(angle), thrust * np.sin(angle)])
+        # TODO: limiting should be done inside circle, not the square. Now max 45deg accel is greater than 1.
         self._accel_vec = np.clip(self._accel_vec + thrust_vec, [-0.1, -0.1], [0.1, 0.1])
 
     @property
@@ -141,7 +144,6 @@ class Character:
 
     def move(self):
         print(self._pos)
-        self.apply_thrust(0.01)
         self._pos += self._accel_vec
         self._t = translation_mat(*self._pos)
         self._update_c()

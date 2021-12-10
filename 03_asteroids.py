@@ -191,14 +191,22 @@ class Player(Character):
         ))
 
 
+def get_circle_pos(segmend_idx: int, segment_count: int) -> tuple:
+    degree = np.radians((360.0 / segment_count) * segmend_idx)
+
+    return np.cos(degree), np.sin(degree)
+
+
 class Asteroid(Character):
+    def __init__(self, pos: Optional[np.array] = None):
+        self._radius = 1
+        self._segments = 12
+
+        super().__init__(pos)
+
     def generate_geometry(self):
-        self._geometry = np.array((
-            (-2, 0,),
-            (1, 0,),
-            (0, 1,),
-            (-2, 0,),
-        ))
+        self._geometry = np.array(tuple(get_circle_pos(idx, self._segments) for idx in range(self._segments)))
+        self._geometry = np.append(self._geometry, [self._geometry[0]], axis=0)
 
 
 IS_RUNNING: bool = False
@@ -228,7 +236,10 @@ def main():
 
     space = Space(20, 20)
     PLAYER = Player(np.array((0., 0.,)))
-    characters: list[Character] = [Asteroid(np.random.rand(2) * 10) for _ in range(ASTEROID_COUNT)]
+    characters: list[Character] = [
+        Asteroid(np.random.rand(2) * 20.0 - 10.0)
+        for _ in range(ASTEROID_COUNT)
+    ]
     characters.append(PLAYER)
 
     fig, _ = plt.subplots()

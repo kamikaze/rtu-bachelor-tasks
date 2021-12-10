@@ -200,8 +200,9 @@ def get_circle_pos(segmend_idx: int, segment_count: int) -> np.array:
 
 class Asteroid(Character):
     def __init__(self, pos: Optional[np.array] = None):
-        self._radius = 1
+        self._radius = 1.0
         self._segments = 12
+        self._distortion = 2.0
 
         super().__init__(pos)
 
@@ -209,7 +210,10 @@ class Asteroid(Character):
 
     def generate_geometry(self):
         self._geometry = np.array(
-            tuple(get_circle_pos(idx, self._segments) - (np.random.rand(2) / 2.0) for idx in range(self._segments))
+            tuple(
+                get_circle_pos(idx, self._segments) - (np.random.rand(2) / self._distortion)
+                for idx in range(self._segments)
+            )
         )
         self._geometry = np.append(self._geometry, [self._geometry[0]], axis=0)
 

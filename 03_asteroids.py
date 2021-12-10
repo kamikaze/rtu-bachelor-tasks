@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
+ASTEROID_COUNT = 10
+
+
 def rotation_mat(degrees: float):
     """
     Rotating around Z axis
@@ -90,7 +93,7 @@ class Space:
 
 
 class Character:
-    SPEED_LIMIT = 0.1
+    SPEED_LIMIT = 0.5
 
     def __init__(self, pos: Optional[np.array] = None):
         self._geometry: Optional[np.array] = None
@@ -227,15 +230,16 @@ def main():
 
     space = Space(20, 20)
     PLAYER = Player(np.array((0., 0.,)))
-    # characters = [PLAYER, Asteroid(np.random.rand(2) * 10), Asteroid(np.random.rand(2) * 10)]
-    characters = [PLAYER, ]
-    IS_RUNNING = True
+    characters: list[Character] = [Asteroid(np.random.rand(2) * 10) for _ in range(ASTEROID_COUNT)]
+    characters.append(PLAYER)
 
     fig, _ = plt.subplots()
     fig.canvas.mpl_connect('key_press_event', on_press)
 
     max_x = space.width / 2.0
     max_y = space.height / 2.0
+
+    IS_RUNNING = True
 
     while IS_RUNNING:
         plt.clf()
@@ -250,7 +254,7 @@ def main():
                 plt.title(f'Angle: {character.angle}')
 
         plt.draw()
-        plt.pause(0.001)
+        plt.pause(0.1)
 
 
 if __name__ == '__main__':

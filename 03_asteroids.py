@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from random import random
 from typing import Optional
 
 import matplotlib
@@ -90,7 +91,7 @@ class Space:
 
 
 class Character:
-    SPEED_LIMIT = 0.1
+    SPEED_LIMIT = 0.5
 
     def __init__(self, pos: Optional[np.array] = None):
         self._geometry: Optional[np.array] = None
@@ -191,17 +192,30 @@ class Player(Character):
         ))
 
 
+def get_circle_pos(segmend_idx: int, segment_count: int) -> np.array:
+    degree = np.radians((360.0 / segment_count) * segmend_idx)
+
+    return np.array([np.cos(degree), np.sin(degree)])
+
+
 class Asteroid(Character):
+    def __init__(self, pos: Optional[np.array] = None):
+        self._radius = 1
+        self._segments = 12
+
+        super().__init__(pos)
+
+        self._color = 'black'
+
     def generate_geometry(self):
-        self._geometry = np.array((
-            (-2, 0,),
-            (1, 0,),
-            (0, 1,),
-            (-2, 0,),
-        ))
+        self._geometry = np.array(
+            tuple(get_circle_pos(idx, self._segments) - (np.random.rand(2) / 2.0) for idx in range(self._segments))
+        )
+        self._geometry = np.append(self._geometry, [self._geometry[0]], axis=0)
 
 
 IS_RUNNING: bool = False
+ASTEROID_COUNT = 10
 PLAYER: Optional[Player] = None
 
 
@@ -222,20 +236,24 @@ def main():
     global IS_RUNNING, PLAYER
 
     matplotlib.use('TkAgg')
-    plt.rcParams['figure.figsize'] = (10, 10,)
+    plt.rcParams['figure.figsize'] = (15, 15,)
     plt.ion()
 
-    space = Space(20, 20)
+    space = Space(40, 40)
     PLAYER = Player(np.array((0., 0.,)))
-    # characters = [PLAYER, Asteroid(np.random.rand(2) * 10), Asteroid(np.random.rand(2) * 10)]
-    characters = [PLAYER, ]
-    IS_RUNNING = True
+    characters: list[Character] = [
+        Asteroid((random() * space.width - space.width / 2.0, random() * space.height - space.height / 2.0))
+        for _ in range(ASTEROID_COUNT)
+    ]
+    characters.append(PLAYER)
 
     fig, _ = plt.subplots()
     fig.canvas.mpl_connect('key_press_event', on_press)
 
     max_x = space.width / 2.0
     max_y = space.height / 2.0
+
+    IS_RUNNING = True
 
     while IS_RUNNING:
         plt.clf()
@@ -250,7 +268,7 @@ def main():
                 plt.title(f'Angle: {character.angle}')
 
         plt.draw()
-        plt.pause(0.001)
+        plt.pause(0.1)
 
 
 if __name__ == '__main__':

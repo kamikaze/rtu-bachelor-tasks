@@ -83,12 +83,19 @@ def vec3d_to_vec2d(vec3d):
     return dot(i, vec3d[:, None])
 
 
+class Space:
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+
+
 class Character:
+    SPEED_LIMIT = 0.1
+
     def __init__(self, pos: Optional[np.array] = None):
         self._geometry: Optional[np.array] = None
 
         self._angle: float = 0.
-        self._speed: float = 0.01
         self._accel_vec: np.array = np.zeros((2,))
         self._pos: np.array = np.zeros((2,)) if pos is None else pos
 
@@ -109,10 +116,14 @@ class Character:
         self._c = dot(dot(self._s, self._t), self._r)
 
     def apply_thrust(self, thrust: float):
-        angle = np.radians(self._angle + 90)
+        angle = np.radians(self._angle + 90.0)
         thrust_vec = np.array([thrust * np.cos(angle), thrust * np.sin(angle)])
         # TODO: limiting should be done inside circle, not the square. Now max 45deg accel is greater than 1.
-        self._accel_vec = np.clip(self._accel_vec + thrust_vec, [-0.1, -0.1], [0.1, 0.1])
+        speed_limit = self.SPEED_LIMIT
+        self._accel_vec = np.clip(
+            self._accel_vec + thrust_vec,
+            [-speed_limit, -speed_limit], [speed_limit, speed_limit]
+        )
 
     @property
     def angle(self):
@@ -130,24 +141,28 @@ class Character:
         self._r = rotation_mat(angle)
         self._update_c()
 
-    @property
-    def speed(self):
-        return self._speed
-
-    @speed.setter
-    def speed(self, speed: float):
-        self._speed = speed
-
     @abstractmethod
     def generate_geometry(self):
         pass
 
-    def move(self):
-        print(self._pos)
+    def move(self, space: Space):
         self._pos += self._accel_vec
+
+        max_x = space.width / 2.0
+        max_y = space.height / 2.0
+
+        if (x := self._pos[0]) < -max_x:
+            self._pos[0] = max_x - abs(x) % max_x
+        elif x > max_x:
+            self._pos[0] = abs(x) % max_x - max_x
+
+        if (y := self._pos[1]) < -max_y:
+            self._pos[1] = max_y- abs(y) % max_y
+        elif y > max_y:
+            self._pos[1] = abs(y) % max_y - max_y
+
         self._t = translation_mat(*self._pos)
         self._update_c()
-        # self._pos = self._pos * self._speed * self._angle
 
     def draw(self):
         if self._geometry is not None:
@@ -210,6 +225,7 @@ def main():
     plt.rcParams['figure.figsize'] = (10, 10,)
     plt.ion()
 
+    space = Space(20, 20)
     PLAYER = Player(np.array((0., 0.,)))
     # characters = [PLAYER, Asteroid(np.random.rand(2) * 10), Asteroid(np.random.rand(2) * 10)]
     characters = [PLAYER, ]
@@ -218,13 +234,16 @@ def main():
     fig, _ = plt.subplots()
     fig.canvas.mpl_connect('key_press_event', on_press)
 
+    max_x = space.width / 2.0
+    max_y = space.height / 2.0
+
     while IS_RUNNING:
         plt.clf()
-        plt.xlim(-10, 10)
-        plt.ylim(-10, 10)
+        plt.xlim(-max_x, max_x)
+        plt.ylim(-max_y, max_y)
 
         for character in characters:
-            character.move()
+            character.move(space)
             character.draw()
 
             if isinstance(character, Player):

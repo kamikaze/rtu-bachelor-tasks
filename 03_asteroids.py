@@ -192,10 +192,10 @@ class Player(Character):
         ))
 
 
-def get_circle_pos(segmend_idx: int, segment_count: int) -> tuple:
+def get_circle_pos(segmend_idx: int, segment_count: int) -> np.array:
     degree = np.radians((360.0 / segment_count) * segmend_idx)
 
-    return np.cos(degree), np.sin(degree)
+    return np.array([np.cos(degree), np.sin(degree)])
 
 
 class Asteroid(Character):
@@ -208,7 +208,9 @@ class Asteroid(Character):
         self._color = 'black'
 
     def generate_geometry(self):
-        self._geometry = np.array(tuple(get_circle_pos(idx, self._segments) for idx in range(self._segments)))
+        self._geometry = np.array(
+            tuple(get_circle_pos(idx, self._segments) - (np.random.rand(2) / 2.0) for idx in range(self._segments))
+        )
         self._geometry = np.append(self._geometry, [self._geometry[0]], axis=0)
 
 

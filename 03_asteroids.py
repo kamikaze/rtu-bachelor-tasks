@@ -6,9 +6,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-ASTEROID_COUNT = 10
-
-
 def rotation_mat(degrees: float):
     """
     Rotating around Z axis
@@ -205,6 +202,7 @@ class Asteroid(Character):
 
 
 IS_RUNNING: bool = False
+ASTEROID_COUNT = 10
 PLAYER: Optional[Player] = None
 
 

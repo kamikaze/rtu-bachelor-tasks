@@ -87,8 +87,8 @@ class Character:
     def __init__(self, pos: Optional[np.array] = None):
         self._geometry: Optional[np.array] = None
 
-        self._angle: float = np.random.random() * np.pi
-        self._speed: float = 0.1
+        self._angle: float = 90.
+        self._speed: float = 0.01
         self._accel_vec: np.array = np.zeros((2,))
         self._pos: np.array = np.zeros((2,)) if pos is None else pos
         self._dir_init: np.array = np.array([0.0, 1.0])
@@ -106,6 +106,10 @@ class Character:
 
     def _update_c(self):
         self._c = dot(dot(self._s, self._t), self._r)
+
+    def apply_thrust(self, thrust: float):
+        thrust_vec = np.array([thrust * np.cos(self._angle), thrust * np.sin(self._angle)])
+        self._accel_vec = np.clip(self._accel_vec + thrust_vec, [-0.1, -0.1], [0.1, 0.1])
 
     @property
     def angle(self):
@@ -137,7 +141,8 @@ class Character:
 
     def move(self):
         print(self._pos)
-        self._pos += np.array([0.1, 0.1])
+        self.apply_thrust(0.01)
+        self._pos += self._accel_vec
         self._t = translation_mat(*self._pos)
         self._update_c()
         # self._pos = self._pos * self._speed * self._angle
@@ -192,6 +197,8 @@ def on_press(event):
         PLAYER.angle += 5
     elif event.key == 'right':
         PLAYER.angle -= 5
+    elif event.key == 'up':
+        PLAYER.apply_thrust(0.01)
 
 
 def main():

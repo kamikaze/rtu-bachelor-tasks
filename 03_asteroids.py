@@ -158,7 +158,7 @@ class Character:
             self._pos[0] = abs(x) % max_x - max_x
 
         if (y := self._pos[1]) < -max_y:
-            self._pos[1] = max_y- abs(y) % max_y
+            self._pos[1] = max_y - abs(y) % max_y
         elif y > max_y:
             self._pos[1] = abs(y) % max_y - max_y
 
@@ -183,6 +183,16 @@ class Character:
 
 
 class Player(Character):
+    def __init__(self, pos: Optional[np.array] = None):
+        super().__init__(pos)
+
+        self._s = np.array([
+            [0.5, 0, 0, ],
+            [0, 1, 0, ],
+            [0, 0, 1, ],
+        ])
+        self._update_c()
+
     def generate_geometry(self):
         self._geometry = np.array((
             (-1, 0,),

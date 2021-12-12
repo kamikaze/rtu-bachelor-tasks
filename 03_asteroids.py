@@ -216,6 +216,12 @@ class Asteroid(Character):
 
         super().__init__(pos)
 
+        if int(random() * 10) % 2:
+            self._s[0][1] = random() / 3.0 * (1 if int(random() * 10) % 2 else -1)
+            self._s[1][0] = random() / 3.0 * (1 if int(random() * 10) % 2 else -1)
+
+            self._update_c()
+
         self._color = 'black'
 
     def generate_geometry(self):

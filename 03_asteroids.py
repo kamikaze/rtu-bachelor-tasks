@@ -100,9 +100,6 @@ class Character:
         self._accel_vec: np.array = np.zeros((2,))
         self._pos: np.array = np.zeros((2,)) if pos is None else pos
 
-        self._dir_init: np.array = np.array([0.0, 1.0])
-        self._dir: np.array = np.array(self._dir_init)
-
         self._color: str = 'r'
 
         self._c: np.ndarray = np.identity(3)
@@ -114,7 +111,7 @@ class Character:
         self.generate_geometry()
 
     def _update_c(self):
-        self._c = dot(dot(self._s, self._t), self._r)
+        self._c = dot(dot(self._t, self._r), self._s)
 
     def apply_thrust(self, thrust: float):
         angle = np.radians(self._angle + 90.0)
@@ -189,7 +186,7 @@ class Player(Character):
         super().__init__(pos)
 
         self._s = np.array([
-            [0.5, 0, 0, ],
+            [0.3, 0, 0, ],
             [0, 1, 0, ],
             [0, 0, 1, ],
         ])
@@ -227,6 +224,21 @@ class Asteroid(Character):
         self._update_c()
 
         self._color = 'black'
+
+    def move(self, space: Space):
+        self._pos += self._accel_vec
+
+        max_x = space.width / 2.0
+        max_y = space.height / 2.0
+
+        if abs(self._pos[0]) > max_x:
+            self._accel_vec[0] = -self._accel_vec[0]
+
+        if abs(self._pos[1]) > max_y:
+            self._accel_vec[1] = -self._accel_vec[1]
+
+        self._t = translation_mat(*self._pos)
+        self._update_c()
 
     def generate_geometry(self):
         self._geometry = np.array(

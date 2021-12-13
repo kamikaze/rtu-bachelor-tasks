@@ -126,6 +126,8 @@ class Character:
             [-speed_limit, -speed_limit], [speed_limit, speed_limit]
         )
 
+        return self
+
     @property
     def angle(self):
         return self._angle
@@ -216,11 +218,13 @@ class Asteroid(Character):
 
         super().__init__(pos)
 
+        self._angle = random() * 360.0
+
         if int(random() * 10) % 2:
             self._s[0][1] = random() / 3.0 * (1 if int(random() * 10) % 2 else -1)
             self._s[1][0] = random() / 3.0 * (1 if int(random() * 10) % 2 else -1)
 
-            self._update_c()
+        self._update_c()
 
         self._color = 'black'
 
@@ -262,7 +266,9 @@ def main():
     space = Space(40, 40)
     PLAYER = Player(np.array((0., 0.,)))
     characters: list[Character] = [
-        Asteroid((random() * space.width - space.width / 2.0, random() * space.height - space.height / 2.0))
+        Asteroid(
+            (random() * space.width - space.width / 2.0, random() * space.height - space.height / 2.0)
+        ).apply_thrust(0.1)
         for _ in range(ASTEROID_COUNT)
     ]
     characters.append(PLAYER)

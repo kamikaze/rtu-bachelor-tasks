@@ -100,7 +100,7 @@ class Character:
         self._accel_vec: np.array = np.zeros((2,))
         self._pos: np.array = np.zeros((2,)) if pos is None else pos
 
-        self._color: str = 'r'
+        self._color: str = 'purple'
 
         self._c: np.ndarray = np.identity(3)
         self._r: np.ndarray = np.identity(3)
@@ -146,23 +146,24 @@ class Character:
         pass
 
     def move(self, space: Space):
-        self._pos += self._accel_vec
+        if self._accel_vec.any():
+            self._pos += self._accel_vec
 
-        max_x = space.width / 2.0
-        max_y = space.height / 2.0
+            max_x = space.width / 2.0
+            max_y = space.height / 2.0
 
-        if (x := self._pos[0]) < -max_x:
-            self._pos[0] = max_x - abs(x) % max_x
-        elif x > max_x:
-            self._pos[0] = abs(x) % max_x - max_x
+            if (x := self._pos[0]) < -max_x:
+                self._pos[0] = max_x - abs(x) % max_x
+            elif x > max_x:
+                self._pos[0] = abs(x) % max_x - max_x
 
-        if (y := self._pos[1]) < -max_y:
-            self._pos[1] = max_y - abs(y) % max_y
-        elif y > max_y:
-            self._pos[1] = abs(y) % max_y - max_y
+            if (y := self._pos[1]) < -max_y:
+                self._pos[1] = max_y - abs(y) % max_y
+            elif y > max_y:
+                self._pos[1] = abs(y) % max_y - max_y
 
-        self._t = translation_mat(*self._pos)
-        self._update_c()
+            self._t = translation_mat(*self._pos)
+            self._update_c()
 
     def draw(self):
         if self._geometry is not None:
@@ -184,6 +185,7 @@ class Character:
 class Player(Character):
     def __init__(self, pos: Optional[np.array] = None):
         super().__init__(pos)
+        self._rockets: list = []
 
         self._s = np.array([
             [0.3, 0, 0, ],
@@ -199,6 +201,27 @@ class Player(Character):
             (0, 1,),
             (-1, 0,),
         ))
+
+    def draw(self):
+        super().draw()
+
+        for rocket in self._rockets:
+            rocket.draw()
+
+    def move(self, space: Space):
+        super().move(space)
+
+        for rocket in self._rockets:
+            rocket.move(space)
+
+        self._rockets = list(filter(lambda r: not r.is_outside(space), self._rockets))
+
+    def fire(self, obj_class):
+        obj = obj_class(self._pos.copy())
+        obj.angle = self._angle
+        obj.apply_thrust(5)
+
+        self._rockets.append(obj)
 
 
 def get_circle_pos(segmend_idx: int, segment_count: int) -> np.array:
@@ -250,6 +273,32 @@ class Asteroid(Character):
         self._geometry = np.append(self._geometry, [self._geometry[0]], axis=0)
 
 
+class Rocket(Character):
+    SPEED_LIMIT = 5
+
+    def __init__(self, pos: Optional[np.array] = None):
+        super().__init__(pos)
+        self._color = 'red'
+
+    def move(self, space: Space):
+        if self._accel_vec.any():
+            self._pos += self._accel_vec
+
+            self._t = translation_mat(*self._pos)
+            self._update_c()
+
+    def is_outside(self, space: Space):
+        return abs(self._pos[0]) > space.width / 2 or abs(self._pos[1]) > space.height / 2
+
+    def generate_geometry(self):
+        self._geometry = np.array((
+            (-0.01, -0.5,),
+            (-0.01, 0.5,),
+            (0.01, 0.5,),
+            (0.01, -0.5,),
+        ))
+
+
 IS_RUNNING: bool = False
 ASTEROID_COUNT = 10
 PLAYER: Optional[Player] = None
@@ -266,6 +315,8 @@ def on_press(event):
         PLAYER.angle -= 5
     elif event.key == 'up':
         PLAYER.apply_thrust(0.01)
+    elif event.key == ' ':
+        PLAYER.fire(Rocket)
 
 
 def main():
@@ -306,7 +357,7 @@ def main():
                 plt.title(f'Angle: {character.angle}')
 
         plt.draw()
-        plt.pause(0.1)
+        plt.pause(0.05)
 
 
 if __name__ == '__main__':

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import abstractmethod
 from random import random
 from typing import Optional
@@ -94,6 +96,7 @@ class Character:
     SPEED_LIMIT = 0.5
 
     def __init__(self, pos: Optional[np.array] = None):
+        self._radius = 1.0
         self._geometry: Optional[np.array] = None
 
         self._angle: float = 0.0
@@ -109,6 +112,24 @@ class Character:
         self._update_c()
 
         self.generate_geometry()
+
+    @property
+    def x(self):
+        return self._pos[0]
+
+    @property
+    def y(self):
+        return self._pos[1]
+
+    @property
+    def width(self):
+        return self._radius
+
+    @staticmethod
+    def has_collision(a: Character, b: Character):
+        distance = ((a.x - b.x) ** 2 + (a.y - b.y) ** 2) ** 0.5
+
+        return distance < (a.width - b.width) / 2.0
 
     def _update_c(self):
         t = np.identity(3)
@@ -148,7 +169,7 @@ class Character:
     def generate_geometry(self):
         pass
 
-    def move(self, space: Space):
+    def move(self, space: Space, characters: list):
         if self._accel_vec.any():
             self._pos += self._accel_vec
 
@@ -217,13 +238,17 @@ class Player(Character):
         for rocket in self._rockets:
             rocket.draw()
 
-    def move(self, space: Space):
-        super().move(space)
+    def move(self, space: Space, characters: list):
+        super().move(space, characters)
 
         for rocket in self._rockets:
             rocket.move(space)
 
         self._rockets = list(filter(lambda r: not r.is_outside(space), self._rockets))
+
+    @property
+    def rockets(self) -> list[Rocket]:
+        return self._rockets
 
     def fire(self, obj_class):
         obj = obj_class(self._pos.copy())
@@ -257,7 +282,7 @@ class Asteroid(Character):
 
         self._color = 'black'
 
-    def move(self, space: Space):
+    def move(self, space: Space, characters: list):
         self._pos += self._accel_vec
 
         max_x = space.width / 2.0
@@ -289,7 +314,7 @@ class Rocket(Character):
         super().__init__(pos)
         self._color = 'red'
 
-    def move(self, space: Space):
+    def move(self, space: Space, characters: list):
         if self._accel_vec.any():
             self._pos += self._accel_vec
 
@@ -311,6 +336,19 @@ class Rocket(Character):
 IS_RUNNING: bool = False
 ASTEROID_COUNT = 10
 PLAYER: Optional[Player] = None
+
+
+def process_collisions(player: Player, characters: list[Character]) -> list[Character]:
+    return characters
+    # checked_characters = []
+    #
+    # for asteroid in filter(lambda c: type(c) == Asteroid, characters):
+    #
+    # for character in characters:
+    #     if type(character) == Player:
+    #         checked_characters.append(character)
+    #
+    # return checked_characters
 
 
 def on_press(event):
@@ -359,11 +397,13 @@ def main():
         plt.ylim(-max_y, max_y)
 
         for character in characters:
-            character.move(space)
+            character.move(space, characters)
             character.draw()
 
             if isinstance(character, Player):
                 plt.title(f'Angle: {character.angle}')
+
+        characters = process_collisions(PLAYER, characters)
 
         plt.draw()
         plt.pause(0.05)

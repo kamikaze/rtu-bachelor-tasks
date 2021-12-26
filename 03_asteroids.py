@@ -96,7 +96,7 @@ class Character:
     def __init__(self, pos: Optional[np.array] = None):
         self._geometry: Optional[np.array] = None
 
-        self._angle: float = 0.
+        self._angle: float = 0.0
         self._accel_vec: np.array = np.zeros((2,))
         self._pos: np.array = np.zeros((2,)) if pos is None else pos
 
@@ -111,7 +111,10 @@ class Character:
         self.generate_geometry()
 
     def _update_c(self):
-        self._c = dot(dot(self._t, self._r), self._s)
+        t = np.identity(3)
+        c = dot(self._s, t)
+        c = dot(self._r, c)
+        self._c = dot(self._t, c)
 
     def apply_thrust(self, thrust: float):
         angle = np.radians(self._angle + 90.0)
@@ -131,10 +134,10 @@ class Character:
 
     @angle.setter
     def angle(self, angle: float):
-        if angle < 0:
-            self._angle = angle + 360
+        if angle < 0.0:
+            self._angle = angle + 360.0
         elif angle >= 360:
-            self.angle = angle - 360
+            self.angle = angle - 360.0
         else:
             self._angle = angle
 
@@ -188,18 +191,24 @@ class Player(Character):
         self._rockets: list = []
 
         self._s = np.array([
-            [0.3, 0, 0, ],
-            [0, 1, 0, ],
-            [0, 0, 1, ],
+            [0.3, 0.0, 0.0, ],
+            [0.0, 1.0, 0.0, ],
+            [0.0, 0.0, 1.0, ],
         ])
         self._update_c()
 
+    def _update_c(self):
+        t = translation_mat(0.0, -0.5)
+        c = dot(self._s, t)
+        c = dot(self._r, c)
+        self._c = dot(self._t, c)
+
     def generate_geometry(self):
         self._geometry = np.array((
-            (-1, 0,),
-            (1, 0,),
-            (0, 1,),
-            (-1, 0,),
+            (-1.0, 0.0,),
+            (1.0, 0.0,),
+            (0.0, 1.0,),
+            (-1.0, 0.0,),
         ))
 
     def draw(self):
@@ -219,7 +228,7 @@ class Player(Character):
     def fire(self, obj_class):
         obj = obj_class(self._pos.copy())
         obj.angle = self._angle
-        obj.apply_thrust(5)
+        obj.apply_thrust(5.0)
 
         self._rockets.append(obj)
 
@@ -241,8 +250,8 @@ class Asteroid(Character):
         self._angle = random() * 360.0
 
         if int(random() * 10) % 2:
-            self._s[0][1] = random() / 3.0 * (1 if int(random() * 10) % 2 else -1)
-            self._s[1][0] = random() / 3.0 * (1 if int(random() * 10) % 2 else -1)
+            self._s[0][1] = random() / 3.0 * (1 if int(random() * 10) % 2 else -1.0)
+            self._s[1][0] = random() / 3.0 * (1 if int(random() * 10) % 2 else -1.0)
 
         self._update_c()
 
@@ -288,7 +297,7 @@ class Rocket(Character):
             self._update_c()
 
     def is_outside(self, space: Space):
-        return abs(self._pos[0]) > space.width / 2 or abs(self._pos[1]) > space.height / 2
+        return abs(self._pos[0]) > space.width / 2.0 or abs(self._pos[1]) > space.height / 2.0
 
     def generate_geometry(self):
         self._geometry = np.array((
@@ -310,9 +319,9 @@ def on_press(event):
     if event.key == 'escape':
         IS_RUNNING = False
     elif event.key == 'left':
-        PLAYER.angle += 5
+        PLAYER.angle += 5.0
     elif event.key == 'right':
-        PLAYER.angle -= 5
+        PLAYER.angle -= 5.0
     elif event.key == 'up':
         PLAYER.apply_thrust(0.01)
     elif event.key == ' ':
@@ -326,8 +335,8 @@ def main():
     plt.rcParams['figure.figsize'] = (15, 15,)
     plt.ion()
 
-    space = Space(40, 40)
-    PLAYER = Player(np.array((0., 0.,)))
+    space = Space(40.0, 40.0)
+    PLAYER = Player(np.array((0.0, 0.0,)))
     characters: list[Character] = [
         Asteroid(
             (random() * space.width - space.width / 2.0, random() * space.height - space.height / 2.0)

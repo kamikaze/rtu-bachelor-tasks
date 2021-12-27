@@ -20,25 +20,25 @@ def rotation_mat(degrees: float):
     s = np.sin(theta)
 
     return np.array([
-        [c, -s, 0],
-        [s, c, 0],
-        [0, 0, 1],
+        [c, -s, 0.0],
+        [s, c, 0.0],
+        [0.0, 0.0, 1.0],
     ])
 
 
 def translation_mat(dx: float, dy: float):
     return np.array([
-        [1, 0, dx],
-        [0, 1, dy],
-        [0, 0, 1],
+        [1.0, 0.0, dx],
+        [0.0, 1.0, dy],
+        [0.0, 0.0, 1.0],
     ])
 
 
 def scale_mat(sx: float, sy: float):
     return np.array([
-        [sx, 0, 0],
-        [0, sy, 0],
-        [0, 0, 1],
+        [sx, 0.0, 0.0],
+        [0.0, sy, 0.0],
+        [0.0, 0.0, 1.0],
     ])
 
 
@@ -69,18 +69,18 @@ def dot(a, b):
 
 def vec2d_to_vec3d(vec2d):
     i = np.array((
-        (1, 0,),
-        (0, 1,),
-        (0, 0,),
+        (1.0, 0.0),
+        (0.0, 1.0),
+        (0.0, 0.0),
     ))
 
-    return dot(i, vec2d[:, None]).transpose()[0] + np.array([0, 0, 1, ])
+    return dot(i, vec2d[:, None]).transpose()[0] + np.array([0.0, 0.0, 1.0])
 
 
 def vec3d_to_vec2d(vec3d):
     i = np.array((
-        (1, 0, 0,),
-        (0, 1, 0,),
+        (1.0, 0.0, 0.0),
+        (0.0, 1.0, 0.0),
     ))
 
     return dot(i, vec3d[:, None])

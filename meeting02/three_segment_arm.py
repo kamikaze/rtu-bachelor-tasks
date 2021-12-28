@@ -41,21 +41,6 @@ def d_rotation(degrees: float):
     ))
 
 
-def translation_mat(dx: float, dy: float):
-    return np.array([
-        [1.0, 0.0, dx],
-        [0.0, 1.0, dy],
-        [0.0, 0.0, 1.0],
-    ])
-
-
-def scale_mat(sx: float, sy: float):
-    return np.array((
-        (sx, 0.0),
-        (0.0, sy),
-    ))
-
-
 def on_button_press(event):
     global TARGET_POINT
 

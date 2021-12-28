@@ -67,8 +67,8 @@ def main():
     np_joints = np.array([segment.copy() for _ in range(SEGMENT_COUNT + 1)])
     np_joints[0] = np.array((0.0, 0.0))
 
-    rs = [None] * SEGMENT_COUNT
-    thetas = [np.deg2rad(-10.0)] * SEGMENT_COUNT
+    rs = [None for _ in range(SEGMENT_COUNT)]
+    thetas = [np.deg2rad(-10.0) for _ in range(SEGMENT_COUNT)]
 
     while IS_RUNNING:
         plt.clf()
@@ -82,8 +82,8 @@ def main():
 
             x = dr @ segment
 
-            for i in range(idx, 0, -1):
-                x = rs[i-1] @ x
+            if idx:
+                x = rs[idx-1] @ x
 
             d_theta = np.sum(x * -2 * (TARGET_POINT - np_joints[-1]))
             thetas[idx] -= d_theta * STEP

@@ -74,7 +74,7 @@ def main():
 
     while IS_RUNNING:
         plt.clf()
-        plt.title(f'loss: {loss:.4f} thetas: {[round(np.rad2deg(theta)) for theta in thetas]}')
+        plt.title(f'loss: {loss:.4f} thetas: {tuple(round(np.rad2deg(theta)) for theta in thetas)}')
 
         for idx in range(SEGMENT_COUNT):
             theta = thetas[idx]

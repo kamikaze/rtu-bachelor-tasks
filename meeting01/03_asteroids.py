@@ -242,7 +242,7 @@ class Player(Character):
         super().move(space, characters)
 
         for rocket in self._rockets:
-            rocket.move(space)
+            rocket.move(space, characters)
 
         self._rockets = list(filter(lambda r: not r.is_outside(space), self._rockets))
 

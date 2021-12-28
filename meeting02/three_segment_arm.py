@@ -69,7 +69,6 @@ def main():
     np_joints[0] = np.array((0.0, 0.0))
 
     rs = [None] * SEGMENT_COUNT
-    drs = [None] * SEGMENT_COUNT
     thetas = [np.deg2rad(-10.0)] * SEGMENT_COUNT
 
     while IS_RUNNING:
@@ -79,7 +78,7 @@ def main():
         for idx in range(SEGMENT_COUNT):
             theta = thetas[idx]
             r = rs[idx] = rotation(theta)
-            dr = drs[idx] = d_rotation(theta)
+            dr = d_rotation(theta)
             np_joints[idx+1] = np.dot(r, segment) + np_joints[idx]
 
             x = dr @ segment

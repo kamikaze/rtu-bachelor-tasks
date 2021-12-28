@@ -8,6 +8,8 @@ plt.ion()
 
 
 SEGMENT_COUNT = 3
+JOINT_LENGTH = 2.0
+STEP = 0.01
 TARGET_POINT = np.array((-3.0, 0.0))
 ANCHOR_POINT = np.array((0.0, 0.0))
 IS_RUNNING = True
@@ -60,11 +62,8 @@ def main():
     fig.canvas.mpl_connect('button_press_event', on_button_press)
     fig.canvas.mpl_connect('key_press_event', on_key_press)
 
-    joint_length = 2.0
     loss = 0.0
-    step = 0.01
-
-    segment = np.array((0.0, 1.0)) * joint_length
+    segment = np.array((0.0, 1.0)) * JOINT_LENGTH
     np_joints = np.array([segment.copy() for _ in range(SEGMENT_COUNT + 1)])
     np_joints[0] = np.array((0.0, 0.0))
 
@@ -87,7 +86,7 @@ def main():
                 x = rs[i-1] @ x
 
             d_theta = np.sum(x * -2 * (TARGET_POINT - np_joints[-1]))
-            thetas[idx] -= d_theta * step
+            thetas[idx] -= d_theta * STEP
 
         loss = np.sum((TARGET_POINT - np_joints[-1]) ** 2)
 

@@ -1,66 +1,82 @@
-from typing import Union
+import random
+from typing import Union, Sequence
 
 import numpy as np
 
 
-def linear(w, b, x) -> float:
+def linear(w: float, b: float, x: Union[np.array, float, int]) -> Union[np.array, float]:
     return w * x + b
 
 
-def dw_linear(w, b, x) -> float:
-    return 0.0
+def dw_linear(w: float, b: float, x: Union[np.array, float, int]) -> Union[np.array, float]:
+    return x
 
 
-def db_linear(w, b, x) -> float:
-    return 0.0
+def db_linear(w: float, b: float, x: Union[np.array, float, int]) -> float:
+    return 1.0
 
 
-def dx_linear(w, b, x) -> float:
-    return 0.0
+def dx_linear(w: float, b: float, x: Union[np.array, float, int]) -> float:
+    return w
 
 
-def sigmoid(a: Union[float | int]) -> float:
+def sigmoid(a: Union[np.array, float, int]) -> float:
     return 1.0 / (1.0 + np.exp(-a))
 
 
-def model(w, b, x) -> float:
+def da_sigmoid(a: Union[np.array, float, int]) -> float:
+    # TODO
+    return 0.0
+
+
+def model(w: float, b: float, x: Union[np.array, float, int]) -> float:
+    return linear(w, b, x)
     return sigmoid(linear(w, b, x)) * 20.0
 
 
-def dw_model(w, b, x) -> float:
+def dw_model(w: float, b: float, x: Union[np.array, float, int]) -> float:
+    # TODO
     return 0.0
 
 
-def db_model(w, b, x) -> float:
+def db_model(w: float, b: float, x: Union[np.array, float, int]) -> float:
+    # TODO
     return 0.0
 
 
-def loss(y: float, y_prim: float):
+def loss(y: Union[np.array, float], y_prim: Union[np.array, float]) -> Union[np.array, float]:
     return np.mean((y - y_prim) ** 2)
 
 
-def dw_loss(y: float, y_prim: float, w, b, x) -> float:
-    return 0.0
+def dw_loss(y: Union[np.array, float], y_prim: Union[np.array, float], w: float, b: float,
+            x: Union[np.array, float, int]) -> Union[np.array, float]:
+    # TODO
+    return np.sum(dw_linear(w, b, x) * -2 * (y - y_prim))
 
 
-def db_loss(y: float, y_prim: float, w, b, x) -> float:
-    return 0.0
+def db_loss(y: Union[np.array, float], y_prim: Union[np.array, float], w: float, b: float,
+            x: Union[np.array, float, int]) -> Union[np.array, float]:
+    # TODO
+    return np.sum(db_linear(w, b, x) * -2 * (y - y_prim))
 
 
-def predict(w, b, x) -> float:
+def predict(w: float, b: float, x: Union[float, int]) -> Union[np.array, float]:
     return linear(w, b, x)
 
 
-def fit(x, y, epochs=100, learning_rate=0.01):
-    w = 0
-    b = 0
+def fit(x: Union[np.array, float, int], y: Union[np.array, float], epochs=100000, learning_rate=0.001):
+    w = random.random()
+    b = random.random()
 
     for epoch in range(epochs):
+        # predicted prices
         y_prim = model(w, b, x)
+
+        # estimate the loss (MSE) between real prices and predicted
         _loss = loss(y, y_prim)
 
         _dw_loss = dw_loss(y, y_prim, w, b, x)
-        _db_loss = dw_loss(y, y_prim, w, b, x)
+        _db_loss = db_loss(y, y_prim, w, b, x)
 
         w -= _dw_loss * learning_rate
         b -= _db_loss * learning_rate

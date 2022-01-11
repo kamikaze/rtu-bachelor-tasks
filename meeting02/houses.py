@@ -53,12 +53,12 @@ def loss(y: np.array, y_prim: np.array) -> np.array:
 
 def dw_loss(y: np.array, y_prim: np.array, w: float, b: float, x: np.array) -> np.array:
     # TODO
-    return np.sum(dw_linear(w, b, x) * -2 * (y - y_prim))
+    return -2.0 / x.size * np.sum(dw_linear(w, b, x) * (y - y_prim) * x)
 
 
 def db_loss(y: np.array, y_prim: np.array, w: float, b: float, x: np.array) -> np.array:
     # TODO
-    return np.sum(db_linear(w, b, x) * -2 * (y - y_prim))
+    return -2.0 / x.size + np.sum(db_linear(w, b, x) * (y - y_prim))
 
 
 def predict(w: float, b: float, x: Union[float, int]) -> np.array:

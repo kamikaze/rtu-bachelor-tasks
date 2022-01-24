@@ -13,10 +13,23 @@ plt.rcParams['figure.figsize'] = (10, 10)
 plt.ion()
 
 IS_RUNNING = False
-X_MIN = 0.139
-X_MAX = 0.144
-Y_MIN = 0.41
-Y_MAX = 0.57
+# Linear
+X_MIN = -2.0
+X_MAX = 3.5
+Y_MIN = -4.0
+Y_MAX = 5.0
+
+# Sigmoid
+# X_MIN = 1.0
+# X_MAX = 1.2
+# Y_MIN = -4.0
+# Y_MAX = -5.0
+
+# Cubic
+# X_MIN = 0.139
+# X_MAX = 0.144
+# Y_MIN = 0.41
+# Y_MAX = 0.57
 LIN_SPACE = np.linspace(0.0, 10.0, 1000)
 
 
@@ -51,8 +64,8 @@ def da_sigmoid(a: np.array) -> float:
 
 def model(w: float, b: float, x: np.array) -> float:
     # return sigmoid(linear(w, b, x)) * 20.0
-    # return linear(w, b, x)
-    return cubic(w, b, x)
+    return linear(w, b, x)
+    # return cubic(w, b, x)
 
 
 def dw_model(w: float, b: float, x: np.array) -> float:
@@ -123,6 +136,8 @@ def fit(_model, x: np.array, y: np.array, epochs=1000000, learning_rate=None, ca
         new_w = w - current_learning_rate * _dw_loss
         new_b = b - current_learning_rate * _db_loss
 
+        # Checking if we are able to improve further. There is a big chance that loss will be not 0 but computer
+        # will not be able to change w or b due to precision limitations. So we will check if change happened instead.
         if new_w == w and new_b == b:
             print(f'{epoch=}: We are at minimum')
             break

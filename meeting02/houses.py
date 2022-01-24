@@ -1,3 +1,4 @@
+import random
 from functools import partial
 from time import sleep
 
@@ -12,10 +13,10 @@ plt.rcParams['figure.figsize'] = (10, 10)
 plt.ion()
 
 IS_RUNNING = False
-X_MIN = -3.0
-X_MAX = 7.0
-Y_MIN = -5.0
-Y_MAX = 5.0
+X_MIN = 0.139
+X_MAX = 0.144
+Y_MIN = 0.41
+Y_MAX = 0.57
 LIN_SPACE = np.linspace(0.0, 10.0, 1000)
 
 
@@ -24,7 +25,7 @@ def linear(w: float, b: float, x: np.array) -> np.array:
 
 
 def cubic(w: float, b: float, x: np.array) -> np.array:
-    return w * x ** 3 + b
+    return w * x**3 + b
 
 
 def dw_linear(w: float, b: float, x: np.array) -> np.array:
@@ -89,18 +90,21 @@ def predict(w: float, b: float, x: np.array) -> np.array:
     return model(w, b, x)
 
 
-def fit(_model, x: np.array, y: np.array, epochs=1000000, learning_rate=0.001, callback=None):
-    w = .0
-    b = .0
+def fit(_model, x: np.array, y: np.array, epochs=1000000, learning_rate=None, callback=None):
+    w = np.float64(random.random())
+    b = np.float64(random.random())
     _loss = None
-    y_predicted = None
+
+    current_learning_rate = learning_rate_start = max(learning_rate)
+    learning_rate_end = min(learning_rate)
+    learning_rate_range = learning_rate_start - learning_rate_end
 
     if callback:
-        xw = np.linspace(X_MIN, X_MAX, 200)
-        yb = np.linspace(Y_MIN, Y_MAX, 200)
+        xw = np.linspace(X_MIN, X_MAX, 100, dtype='float64')
+        yb = np.linspace(Y_MIN, Y_MAX, 100, dtype='float64')
         xw, yb = np.meshgrid(xw, yb)
 
-        z = np.array([loss(y, _model(xx, yy, x)) for xx, yy in zip(np.ravel(xw), np.ravel(yb))])
+        z = np.array([loss(y, _model(xx, yy, x)) for xx, yy in zip(np.ravel(xw), np.ravel(yb))], dtype='float64')
         z = z.reshape(xw.shape)
 
     for epoch in range(epochs):
@@ -113,17 +117,35 @@ def fit(_model, x: np.array, y: np.array, epochs=1000000, learning_rate=0.001, c
         _dw_loss = dw_loss(y, y_predicted, w, b, x)
         _db_loss = db_loss(y, y_predicted, w, b, x)
 
-        w -= learning_rate * _dw_loss
-        b -= learning_rate * _db_loss
-
         if epoch % 100 == 0:
-            if callback:
-                callback(x, y, w, b, _loss, xw, yb, z)
+            current_learning_rate = learning_rate_start - learning_rate_range * (epoch / epochs)
+
+        new_w = w - current_learning_rate * _dw_loss
+        new_b = b - current_learning_rate * _db_loss
+
+        if new_w == w and new_b == b:
+            print(f'{epoch=}: We are at minimum')
+            break
+
+        w = new_w
+        b = new_b
+
+        if callback:
+            # if epoch < 100 or epoch % 100 == 0:
+            if epoch % 100 == 0:
+                callback(x, y, w, b, current_learning_rate, _loss, xw, yb, z)
+
+                # if epoch == 0:
+                #     mng = plt.get_current_fig_manager()
+                #     mng.window.state('zoomed')
+                #     callback(x, y, w, b, _loss, xw, yb, z)
+                #
+                # plt.savefig(f'plot_{epoch:0>8}.png')
 
     if callback:
-        callback(x, y, w, b, _loss, xw, yb, z)
+        callback(x, y, w, b, current_learning_rate, _loss, xw, yb, z)
 
-    print(f'{w=} {b=} {y_predicted=} {_loss=}')
+    print(f'{w=} {b=} {_loss=}')
 
     return w, b
 
@@ -135,10 +157,10 @@ def on_key_press(event):
         IS_RUNNING = False
 
 
-def update_plot(fig, x: np.array, y: np.array, w: float, b: float, _loss: float,
+def update_plot(fig, x: np.array, y: np.array, w: float, b: float, learning_rate: float, _loss: float,
                 xw, yb, z):
     plt.clf()
-    fig.suptitle(f'{w=} {b=} loss={_loss}')
+    fig.suptitle(f'{w=} {b=} loss={_loss} {learning_rate=}')
 
     ax = fig.add_subplot(1, 2, 1)
 
@@ -148,7 +170,7 @@ def update_plot(fig, x: np.array, y: np.array, w: float, b: float, _loss: float,
     ax.set_title('Model')
 
     ax = fig.add_subplot(1, 2, 2, projection='3d')
-    ax.view_init(None, -85)
+    # ax.view_init(None, -85)
 
     ax.scatter(w, b, _loss, color='black')
 
@@ -167,19 +189,19 @@ def update_plot(fig, x: np.array, y: np.array, w: float, b: float, _loss: float,
 
 def main():
     global IS_RUNNING
-    floors = np.array([1, 2, 3, 4])
-    prices = np.array([0.7, 1.5, 4.5, 9.5])
+    floors = np.array([1, 2, 3, 4], dtype='float64')
+    prices = np.array([0.7, 1.5, 4.5, 9.5], dtype='float64')
 
     fig = plt.figure(figsize=plt.figaspect(1.))
     fig.canvas.mpl_connect('key_press_event', on_key_press)
     plt.show()
 
     callback = partial(update_plot, fig)
-    w, b = fit(model, floors, prices, learning_rate=0.001, callback=callback)
+    learning_rate = [np.float64(0.01), np.float64(0.0001)]
+    w, b = fit(model, floors, prices, epochs=10000, learning_rate=learning_rate, callback=callback)
 
-    print(f'Predicted price: {predict(w, b, 3) * 100000.0:.2f} EUR')
-
-    plt.savefig('plot.png')
+    print(f'Predicted price for 3 floor building: {predict(w, b, 3) * 100000.0:.2f} EUR')
+    print(f'Predicted price for 5 floor building: {predict(w, b, 5) * 100000.0:.2f} EUR')
 
     IS_RUNNING = True
 

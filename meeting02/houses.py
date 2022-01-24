@@ -6,13 +6,16 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
-from scipy.interpolate import griddata
 
 matplotlib.use('TkAgg')
 plt.rcParams['figure.figsize'] = (10, 10)
 plt.ion()
 
 IS_RUNNING = False
+X_MIN = -15.0
+X_MAX = 35.0
+Y_MIN = -15.0
+Y_MAX = 50.0
 LIN_SPACE = np.linspace(0.0, 10.0, 1000)
 
 
@@ -82,14 +85,18 @@ def predict(w: float, b: float, x: np.array) -> np.array:
 
 
 def fit(_model, x: np.array, y: np.array, epochs=1000000, learning_rate=0.001, callback=None):
-    w = 0.0
-    b = 0.0
+    w = 30.0
+    b = 50.0
     _loss = None
     y_predicted = None
 
-    w_history = []
-    b_history = []
-    loss_history = []
+    if callback:
+        xw = np.linspace(X_MIN, X_MAX, 200)
+        yb = np.linspace(Y_MIN, Y_MAX, 200)
+        xw, yb = np.meshgrid(xw, yb)
+
+        z = np.array([loss(y, _model(xx, yy, x)) for xx, yy in zip(np.ravel(xw), np.ravel(yb))])
+        z = z.reshape(xw.shape)
 
     for epoch in range(epochs):
         # predicted prices
@@ -104,13 +111,13 @@ def fit(_model, x: np.array, y: np.array, epochs=1000000, learning_rate=0.001, c
         w -= learning_rate * _dw_loss
         b -= learning_rate * _db_loss
 
-        if callback:
-            w_history.append(w)
-            b_history.append(b)
-            loss_history.append(_loss)
+        if epoch % 100 == 0:
+            if callback:
+                speed = max(learning_rate * _dw_loss, learning_rate * _db_loss)
+                callback(x, y, w, b, _loss, xw, yb, z, speed)
 
-            if len(loss_history) > 4:
-                callback(x, y, w, b, _loss, w_history, b_history, loss_history)
+    if callback:
+        callback(x, y, w, b, _loss, xw, yb, z)
 
     print(f'{w=} {b=} {y_predicted=} {_loss=}')
 
@@ -125,7 +132,7 @@ def on_key_press(event):
 
 
 def update_plot(fig, x: np.array, y: np.array, w: float, b: float, _loss: float,
-                w_history: list, b_history: list, loss_history: list):
+                xw, yb, z, speed: float):
     plt.clf()
     fig.suptitle(f'{w=} {b=} loss={_loss}')
 
@@ -134,25 +141,20 @@ def update_plot(fig, x: np.array, y: np.array, w: float, b: float, _loss: float,
     ax.scatter(x, y)
     # ax.legend([None, 'model'])
     ax.plot(LIN_SPACE, model(w, b, LIN_SPACE), color='r')
+    ax.set_title('Model')
 
     ax = fig.add_subplot(1, 2, 2, projection='3d')
+    ax.view_init(None, -85)
 
-    x1 = np.linspace(min(w_history), max(w_history), len(w_history))
-    y1 = np.linspace(min(b_history), max(b_history), len(b_history))
-    x2, y2 = np.meshgrid(x1, y1)
-    z2 = griddata((w_history, b_history), np.array(loss_history), (x2, y2), method='cubic')
+    ax.scatter(w, b, _loss, color='black')
 
-    surf = ax.plot_surface(x2, y2, z2, rstride=1, cstride=1, cmap=cm.coolwarm, linewidth=0, antialiased=False)
-
-    # ax.set_zlim(-1.01, 1.01)
+    surf = ax.plot_surface(xw, yb, z, rstride=4, cstride=4, cmap=cm.coolwarm, linewidth=1, antialiased=False, alpha=0.5)
 
     ax.zaxis.set_major_locator(LinearLocator(10))
-    ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
+    ax.zaxis.set_major_formatter(FormatStrFormatter('%.05f'))
 
-    fig.colorbar(surf, shrink=0.5, aspect=5)
-    ax.set_title('Surface plot')
-
-    ax.scatter(w_history[-1], b_history[-1], loss_history[-1], color='yellow')
+    # fig.colorbar(surf, shrink=0.5, aspect=5)
+    ax.set_title('Loss')
 
     plt.draw()
 
@@ -169,7 +171,7 @@ def main():
     plt.show()
 
     callback = partial(update_plot, fig)
-    w, b = fit(model, floors, prices, learning_rate=0.02, callback=callback)
+    w, b = fit(model, floors, prices, learning_rate=0.0005, callback=callback)
 
     print(f'Predicted price: {predict(w, b, 3) * 100000.0:.2f} EUR')
 

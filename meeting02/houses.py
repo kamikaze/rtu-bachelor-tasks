@@ -100,8 +100,8 @@ def fit(_model, x: np.array, y: np.array, epochs=1000000, learning_rate=None, ca
     learning_rate_range = learning_rate_start - learning_rate_end
 
     if callback:
-        xw = np.linspace(X_MIN, X_MAX, 100, dtype='float64')
-        yb = np.linspace(Y_MIN, Y_MAX, 100, dtype='float64')
+        xw = np.linspace(X_MIN, X_MAX, 50, dtype='float64')
+        yb = np.linspace(Y_MIN, Y_MAX, 50, dtype='float64')
         xw, yb = np.meshgrid(xw, yb)
 
         z = np.array([loss(y, _model(xx, yy, x)) for xx, yy in zip(np.ravel(xw), np.ravel(yb))], dtype='float64')
@@ -131,16 +131,16 @@ def fit(_model, x: np.array, y: np.array, epochs=1000000, learning_rate=None, ca
         b = new_b
 
         if callback:
-            # if epoch < 100 or epoch % 100 == 0:
-            if epoch % 100 == 0:
+            # if epoch < 50 or epoch % 10 == 0:
+            if epoch % 20 == 0:
                 callback(x, y, w, b, current_learning_rate, _loss, xw, yb, z)
 
-                # if epoch == 0:
-                #     mng = plt.get_current_fig_manager()
-                #     mng.window.state('zoomed')
-                #     callback(x, y, w, b, _loss, xw, yb, z)
-                #
-                # plt.savefig(f'plot_{epoch:0>8}.png')
+            if epoch == 0:
+                mng = plt.get_current_fig_manager()
+                mng.window.state('zoomed')
+                callback(x, y, w, b, current_learning_rate, _loss, xw, yb, z)
+
+            # plt.savefig(f'plot_{epoch:0>8}.png')
 
     if callback:
         callback(x, y, w, b, current_learning_rate, _loss, xw, yb, z)
@@ -172,9 +172,8 @@ def update_plot(fig, x: np.array, y: np.array, w: float, b: float, learning_rate
     ax = fig.add_subplot(1, 2, 2, projection='3d')
     # ax.view_init(None, -85)
 
+    surf = ax.plot_surface(xw, yb, z, rstride=1, cstride=1, cmap=cm.coolwarm, linewidth=1, antialiased=False, alpha=0.6)
     ax.scatter(w, b, _loss, color='black')
-
-    surf = ax.plot_surface(xw, yb, z, rstride=4, cstride=4, cmap=cm.coolwarm, linewidth=1, antialiased=False, alpha=0.5)
 
     ax.zaxis.set_major_locator(LinearLocator(10))
     ax.zaxis.set_major_formatter(FormatStrFormatter('%.05f'))
@@ -197,7 +196,7 @@ def main():
     plt.show()
 
     callback = partial(update_plot, fig)
-    learning_rate = [np.float64(0.01), np.float64(0.0001)]
+    learning_rate = [np.float64(0.005), np.float64(0.0001)]
     w, b = fit(model, floors, prices, epochs=10000, learning_rate=learning_rate, callback=callback)
 
     print(f'Predicted price for 3 floor building: {predict(w, b, 3) * 100000.0:.2f} EUR')

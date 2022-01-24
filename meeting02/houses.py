@@ -53,13 +53,17 @@ def dx_linear(w: float, b: float, x: np.array) -> float:
     return w
 
 
+def dx_cubic(w: float, b: float, x: np.array) -> float:
+    return w * 3 * x**2
+
+
 def sigmoid(a: np.array) -> float:
     return 1.0 / (1.0 + np.exp(-a))
 
 
 def da_sigmoid(a: np.array) -> float:
-    # TODO
-    return 0.0
+    sigmoid_a = sigmoid(a)
+    return sigmoid_a * (1 - sigmoid_a)
 
 
 def model(w: float, b: float, x: np.array) -> float:
@@ -69,13 +73,13 @@ def model(w: float, b: float, x: np.array) -> float:
 
 
 def dw_model(w: float, b: float, x: np.array) -> float:
-    # return da_sigmoid(linear(w, b, x))
-    return dw_linear(w, b, x)
+    return da_sigmoid(linear(w, b, x)) * dw_linear(w, b, x)
+    # return dw_linear(w, b, x)  # same for dw_cubic
 
 
 def db_model(w: float, b: float, x: np.array) -> float:
-    # return da_sigmoid(linear(w, b, x))
-    return db_linear(w, b, x)
+    return da_sigmoid(linear(w, b, x)) * db_linear(w, b, x)
+    # return db_linear(w, b, x)  # same for db_cubic
 
 
 def loss(y: np.array, y_predicted: np.array) -> np.array:

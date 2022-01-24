@@ -118,8 +118,7 @@ def fit(_model, x: np.array, y: np.array, epochs=1000000, learning_rate=0.001, c
 
         if epoch % 100 == 0:
             if callback:
-                speed = max(learning_rate * _dw_loss, learning_rate * _db_loss)
-                callback(x, y, w, b, _loss, xw, yb, z, speed)
+                callback(x, y, w, b, _loss, xw, yb, z)
 
     if callback:
         callback(x, y, w, b, _loss, xw, yb, z)
@@ -137,7 +136,7 @@ def on_key_press(event):
 
 
 def update_plot(fig, x: np.array, y: np.array, w: float, b: float, _loss: float,
-                xw, yb, z, speed: float):
+                xw, yb, z):
     plt.clf()
     fig.suptitle(f'{w=} {b=} loss={_loss}')
 

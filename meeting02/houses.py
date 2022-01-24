@@ -100,8 +100,8 @@ def fit(_model, x: np.array, y: np.array, epochs=1000000, learning_rate=None, ca
     learning_rate_range = learning_rate_start - learning_rate_end
 
     if callback:
-        xw = np.linspace(X_MIN, X_MAX, 50, dtype='float64')
-        yb = np.linspace(Y_MIN, Y_MAX, 50, dtype='float64')
+        xw = np.linspace(X_MIN, X_MAX, 30, dtype='float64')
+        yb = np.linspace(Y_MIN, Y_MAX, 30, dtype='float64')
         xw, yb = np.meshgrid(xw, yb)
 
         z = np.array([loss(y, _model(xx, yy, x)) for xx, yy in zip(np.ravel(xw), np.ravel(yb))], dtype='float64')

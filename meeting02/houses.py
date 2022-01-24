@@ -12,15 +12,19 @@ plt.rcParams['figure.figsize'] = (10, 10)
 plt.ion()
 
 IS_RUNNING = False
-X_MIN = -15.0
-X_MAX = 35.0
-Y_MIN = -15.0
-Y_MAX = 50.0
+X_MIN = -3.0
+X_MAX = 7.0
+Y_MIN = -5.0
+Y_MAX = 5.0
 LIN_SPACE = np.linspace(0.0, 10.0, 1000)
 
 
 def linear(w: float, b: float, x: np.array) -> np.array:
     return w * x + b
+
+
+def cubic(w: float, b: float, x: np.array) -> np.array:
+    return w * x ** 3 + b
 
 
 def dw_linear(w: float, b: float, x: np.array) -> np.array:
@@ -45,8 +49,9 @@ def da_sigmoid(a: np.array) -> float:
 
 
 def model(w: float, b: float, x: np.array) -> float:
-    return sigmoid(linear(w, b, x)) * 20.0
+    # return sigmoid(linear(w, b, x)) * 20.0
     # return linear(w, b, x)
+    return cubic(w, b, x)
 
 
 def dw_model(w: float, b: float, x: np.array) -> float:
@@ -85,8 +90,8 @@ def predict(w: float, b: float, x: np.array) -> np.array:
 
 
 def fit(_model, x: np.array, y: np.array, epochs=1000000, learning_rate=0.001, callback=None):
-    w = 30.0
-    b = 50.0
+    w = .0
+    b = .0
     _loss = None
     y_predicted = None
 
@@ -171,7 +176,7 @@ def main():
     plt.show()
 
     callback = partial(update_plot, fig)
-    w, b = fit(model, floors, prices, learning_rate=0.0005, callback=callback)
+    w, b = fit(model, floors, prices, learning_rate=0.001, callback=callback)
 
     print(f'Predicted price: {predict(w, b, 3) * 100000.0:.2f} EUR')
 

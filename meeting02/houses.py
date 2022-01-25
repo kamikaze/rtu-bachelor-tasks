@@ -68,19 +68,19 @@ def da_sigmoid(a: np.array) -> float:
 
 
 def model(w: float, b: float, x: np.array) -> float:
-    return sigmoid(linear(w, b, x)) * 20.0
+    # return sigmoid(linear(w, b, x)) * 20.0
     # return linear(w, b, x)
-    # return cubic(w, b, x)
+    return cubic(w, b, x)
 
 
 def dw_model(w: float, b: float, x: np.array) -> float:
-    return da_sigmoid(linear(w, b, x)) * dw_linear(w, b, x)
-    # return dw_linear(w, b, x)  # same for dw_cubic
+    # return da_sigmoid(linear(w, b, x)) * dw_linear(w, b, x)
+    return dw_linear(w, b, x)  # same for dw_cubic
 
 
 def db_model(w: float, b: float, x: np.array) -> float:
-    return da_sigmoid(linear(w, b, x)) * db_linear(w, b, x)
-    # return db_linear(w, b, x)  # same for db_cubic
+    # return da_sigmoid(linear(w, b, x)) * db_linear(w, b, x)
+    return db_linear(w, b, x)  # same for db_cubic
 
 
 def loss(y: np.array, y_predicted: np.array) -> np.array:
@@ -94,14 +94,14 @@ def dw_loss(y: np.array, y_predicted: np.array, w: float, b: float, x: np.array)
     # w is theta_1
     # b + w * x == y_predicted
     # 2 * np.mean((b + w * x - y) * x) ==
-    return 2 * np.mean((y_predicted - y) * x)
+    return 2 * np.mean((y_predicted - y) * dw_model(w, b, x))
 
 
 def db_loss(y: np.array, y_predicted: np.array, w: float, b: float, x: np.array) -> np.array:
     # b is theta_0
     # b + w * x == y_predicted
     # 2 * np.mean(b + w * x - y) ==
-    return 2 * np.mean(y_predicted - y)
+    return 2 * np.mean((y_predicted - y) * db_model(w, b, x))
 
 
 def predict(w: float, b: float, x: np.array) -> np.array:
@@ -124,6 +124,9 @@ def fit(_model, x: np.array, y: np.array, epochs=1000000, learning_rate=None, ca
 
         z = np.array([loss(y, _model(xx, yy, x)) for xx, yy in zip(np.ravel(xw), np.ravel(yb))], dtype='float64')
         z = z.reshape(xw.shape)
+
+        # z += np.array([loss(y, linear(xx, yy, x)) for xx, yy in zip(np.ravel(xw), np.ravel(yb))], dtype='float64')
+        # z = z.reshape(xw.shape)
 
     epoch = None
 
@@ -153,18 +156,18 @@ def fit(_model, x: np.array, y: np.array, epochs=1000000, learning_rate=None, ca
         b = new_b
 
         if callback:
-            if epoch < 100 or epoch % 50 == 0:
-                callback(x, y, w, b, epoch, current_learning_rate, _loss, xw, yb, z)
+            if epoch < 100 or epoch % 20 == 0:
+                callback(x, y, w, b, epoch, current_learning_rate, _loss, xw, yb, [z])
 
                 if epoch == 0:
                     mng = plt.get_current_fig_manager()
-                    mng.window.state('zoomed')
-                    callback(x, y, w, b, epoch, current_learning_rate, _loss, xw, yb, z)
+                    mng.window.state('normal')
+                    callback(x, y, w, b, epoch, current_learning_rate, _loss, xw, yb, [z])
 
                 # plt.savefig(f'plot_{idx:0>8}.png')
 
     if callback:
-        callback(x, y, w, b, epoch, current_learning_rate, _loss, xw, yb, z)
+        callback(x, y, w, b, epoch, current_learning_rate, _loss, xw, yb, [z])
 
     print(f'{w=} {b=} {_loss=}')
 
@@ -179,7 +182,7 @@ def on_key_press(event):
 
 
 def update_plot(fig, x: np.array, y: np.array, w: float, b: float, epoch: int, learning_rate: float, _loss: float,
-                xw, yb, z):
+                xw, yb, z: list):
     plt.clf()
     fig.suptitle(f'{epoch=} {w=} {b=} loss={_loss} {learning_rate=}')
 
@@ -193,7 +196,9 @@ def update_plot(fig, x: np.array, y: np.array, w: float, b: float, epoch: int, l
     ax = fig.add_subplot(1, 2, 2, projection='3d')
     # ax.view_init(None, -85)
 
-    surf = ax.plot_surface(xw, yb, z, rstride=1, cstride=1, cmap=cm.coolwarm, linewidth=1, antialiased=False, alpha=0.6)
+    for _z in z:
+        surf = ax.plot_surface(xw, yb, _z, rstride=1, cstride=1, cmap=cm.coolwarm, linewidth=1, antialiased=False, alpha=0.6)
+
     ax.scatter(w, b, _loss, color='black')
 
     ax.zaxis.set_major_locator(LinearLocator(10))

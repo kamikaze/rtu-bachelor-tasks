@@ -20,10 +20,10 @@ IS_RUNNING = False
 # Y_MAX = 5.0
 
 # Sigmoid
-X_MIN = -20.0
-X_MAX = 20.0
-Y_MIN = -50.0
-Y_MAX = 50.0
+X_MIN = -10.0
+X_MAX = 10.0
+Y_MIN = -20.0
+Y_MAX = 30.0
 
 # Cubic
 # X_MIN = 0.139
@@ -63,6 +63,7 @@ def sigmoid(a: np.array) -> float:
 
 def da_sigmoid(a: np.array) -> float:
     sigmoid_a = sigmoid(a)
+
     return sigmoid_a * (1 - sigmoid_a)
 
 
@@ -209,6 +210,7 @@ def main():
     global IS_RUNNING
     floors = np.array([1, 2, 3, 4], dtype='float64')
     prices = np.array([0.7, 1.5, 4.5, 9.5], dtype='float64')
+    print(f'{prices*100000=}')
 
     fig = plt.figure(figsize=plt.figaspect(1.))
     fig.canvas.mpl_connect('key_press_event', on_key_press)

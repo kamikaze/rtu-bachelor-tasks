@@ -109,8 +109,8 @@ def predict(w: float, b: float, x: np.array) -> np.array:
 
 
 def fit(_model, x: np.array, y: np.array, epochs=1000000, learning_rate=None, callback=None):
-    w = np.float64(random.random())
-    b = np.float64(random.random())
+    w = np.float64(10)
+    b = np.float64(30)
     _loss = None
 
     current_learning_rate = learning_rate_start = max(learning_rate)
@@ -125,7 +125,9 @@ def fit(_model, x: np.array, y: np.array, epochs=1000000, learning_rate=None, ca
         z = np.array([loss(y, _model(xx, yy, x)) for xx, yy in zip(np.ravel(xw), np.ravel(yb))], dtype='float64')
         z = z.reshape(xw.shape)
 
-    for epoch in range(epochs):
+    epoch = None
+
+    for idx, epoch in enumerate(range(epochs)):
         # predicted prices
         y_predicted = _model(w, b, x)
 
@@ -135,7 +137,7 @@ def fit(_model, x: np.array, y: np.array, epochs=1000000, learning_rate=None, ca
         _dw_loss = dw_loss(y, y_predicted, w, b, x)
         _db_loss = db_loss(y, y_predicted, w, b, x)
 
-        if epoch % 100 == 0:
+        if epoch % 10 == 0:
             current_learning_rate = learning_rate_start - learning_rate_range * (epoch / epochs)
 
         new_w = w - current_learning_rate * _dw_loss
@@ -151,19 +153,18 @@ def fit(_model, x: np.array, y: np.array, epochs=1000000, learning_rate=None, ca
         b = new_b
 
         if callback:
-            # if epoch < 50 or epoch % 10 == 0:
-            if epoch % 20 == 0:
-                callback(x, y, w, b, current_learning_rate, _loss, xw, yb, z)
+            if epoch < 100 or epoch % 50 == 0:
+                callback(x, y, w, b, epoch, current_learning_rate, _loss, xw, yb, z)
 
-            if epoch == 0:
-                mng = plt.get_current_fig_manager()
-                mng.window.state('zoomed')
-                callback(x, y, w, b, current_learning_rate, _loss, xw, yb, z)
+                if epoch == 0:
+                    mng = plt.get_current_fig_manager()
+                    mng.window.state('zoomed')
+                    callback(x, y, w, b, epoch, current_learning_rate, _loss, xw, yb, z)
 
-            # plt.savefig(f'plot_{epoch:0>8}.png')
+                # plt.savefig(f'plot_{idx:0>8}.png')
 
     if callback:
-        callback(x, y, w, b, current_learning_rate, _loss, xw, yb, z)
+        callback(x, y, w, b, epoch, current_learning_rate, _loss, xw, yb, z)
 
     print(f'{w=} {b=} {_loss=}')
 
@@ -177,10 +178,10 @@ def on_key_press(event):
         IS_RUNNING = False
 
 
-def update_plot(fig, x: np.array, y: np.array, w: float, b: float, learning_rate: float, _loss: float,
+def update_plot(fig, x: np.array, y: np.array, w: float, b: float, epoch: int, learning_rate: float, _loss: float,
                 xw, yb, z):
     plt.clf()
-    fig.suptitle(f'{w=} {b=} loss={_loss} {learning_rate=}')
+    fig.suptitle(f'{epoch=} {w=} {b=} loss={_loss} {learning_rate=}')
 
     ax = fig.add_subplot(1, 2, 1)
 
@@ -218,7 +219,7 @@ def main():
 
     callback = partial(update_plot, fig)
     learning_rate = [np.float64(0.005), np.float64(0.0001)]
-    w, b = fit(model, floors, prices, epochs=10000, learning_rate=learning_rate, callback=callback)
+    w, b = fit(model, floors, prices, epochs=20000, learning_rate=learning_rate, callback=callback)
 
     print(f'Predicted price for 3 floor building: {predict(w, b, 3) * 100000.0:.2f} EUR')
     print(f'Predicted price for 5 floor building: {predict(w, b, 5) * 100000.0:.2f} EUR')

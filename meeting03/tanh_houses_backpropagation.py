@@ -95,7 +95,8 @@ class MAELoss:
         return np.mean(np.abs(y.value - y_prim.value))
 
     def backward(self):
-        self.y_prim.grad = (self.y_prim.value - self.y.value) / np.abs(self.y.value - self.y_prim.value)
+        diff = self.y.value - self.y_prim.value
+        self.y_prim.grad = -(diff / np.abs(diff))
 
 
 class Model:
@@ -104,8 +105,7 @@ class Model:
             LinearLayer(in_features=1, out_features=1),
             TanhLayer(),
             LinearLayer(in_features=1, out_features=1),
-            LeakyReLULayer(),
-            LinearLayer(in_features=1, out_features=1)
+            LeakyReLULayer(slope=np.float64(0.000001))
         ]
 
     def forward(self, x: Variable) -> Variable:
@@ -144,15 +144,15 @@ class SGDOptimizer:
 def main():
     plt.show()
 
-    floors = np.array([1, 2, 4], dtype='float64')
-    prices = np.array([0.7, 1.5, 9.5], dtype='float64')
+    floors = np.array([[1], [2], [4]], dtype='float64')
+    prices = np.array([[0.7], [1.5], [9.5]], dtype='float64')
 
     dataset_train = (floors, prices)
-    dataset_test = (np.array([3], dtype='float64'), np.array([4.5], dtype='float64'))
+    dataset_test = (np.array([[3]], dtype='float64'), np.array([[4.5]], dtype='float64'))
 
-    epoch_count = 300
-    learning_rate = 0.01
-    batch_size = 2
+    epoch_count = 2000000
+    learning_rate = np.float64(0.0001)
+    batch_size = 3
 
     model = Model()
     optimizer = SGDOptimizer(model.parameters(), learning_rate)
@@ -165,9 +165,12 @@ def main():
             data_x, data_y = dataset
             losses = []
 
-            for idx in range(0, len(data_x) - batch_size, batch_size):
-                x = data_x[idx:idx+batch_size]
-                y = data_y[idx:idx+batch_size]
+            x_cnt = len(data_x)
+            window = min(x_cnt, batch_size)
+
+            for idx in range(0, x_cnt - window + 1, window):
+                x = data_x[idx:idx+window]
+                y = data_y[idx:idx+window]
 
                 y_prim = model.forward(Variable(x))
                 loss = loss_fn.forward(Variable(y), y_prim)
@@ -186,9 +189,8 @@ def main():
             else:
                 losses_test.append(mean_loss)
 
-        print(f'{epoch=} losses_train: {losses_train[-1]} losses_test: {losses_test[-1]}')
-
-        if epoch % 10 == 0:
+        if epoch % 1000 == 0:
+            print(f'{epoch=} losses_train: {losses_train[-1]} losses_test: {losses_test[-1]}')
             plt.clf()
             plt.plot(losses_train)
             plt.plot(losses_test)

@@ -1,10 +1,9 @@
-import time
 from typing import Optional, Sequence
 
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import sklearn.datasets
+
 
 matplotlib.use('TkAgg')
 plt.rcParams['figure.figsize'] = (10, 10)
@@ -67,40 +66,8 @@ class TanhLayer:
         self.x.grad = (1 - (x_exp - minus_x_exp) ** 2 / (x_exp + minus_x_exp) ** 2) * self.output.grad
 
 
-class SigmoidLayer:
-    def __init__(self):
-        self.x = None
-        self.output = None
-
-    def forward(self, x: Variable) -> Variable:
-        self.x = x
-        self.output = Variable(
-            1.0 / (1.0 + np.exp(-x.value))
-        )
-        return self.output
-
-    def backward(self):
-        self.x.grad = -1.0 / (1.0 + np.exp(-self.x.value)) ** 2 * self.output.grad
-
-
-class ReLULayer:
-    def __init__(self):
-        self.x = None
-        self.output = None
-
-    def forward(self, x: Variable) -> Variable:
-        self.x = x
-        self.output = Variable(
-            (x.value >= 0) * x.value
-        )
-        return self.output
-
-    def backward(self):
-        self.x.grad = (self.x.value >= 0) * self.output.grad
-
-
 class LeakyReLULayer:
-    def __init__(self, slope: float = 0.0000001):
+    def __init__(self, slope: float = 0.01):
         self.x = None
         self.output = None
         self.slope = slope
@@ -131,28 +98,14 @@ class MAELoss:
         self.y_prim.grad = (self.y_prim.value - self.y.value) / np.abs(self.y.value - self.y_prim.value)
 
 
-class MSELoss:
-    def __init__(self):
-        self.y: Optional[Variable] = None
-        self.y_prim: Optional[Variable] = None
-
-    def forward(self, y: Variable, y_prim: Variable) -> float:
-        self.y = y
-        self.y_prim = y_prim
-        return np.mean((y.value - y_prim.value) ** 2)
-
-    def backward(self):
-        self.y_prim.grad = 2.0 * (self.y_prim.value - self.y.value)
-
-
 class Model:
     def __init__(self):
         self.layers = [
-            LinearLayer(in_features=8, out_features=4),
-            SigmoidLayer(),
-            LinearLayer(in_features=4, out_features=4),
-            SigmoidLayer(),
-            LinearLayer(in_features=4, out_features=1)
+            LinearLayer(in_features=1, out_features=1),
+            TanhLayer(),
+            LinearLayer(in_features=1, out_features=1),
+            LeakyReLULayer(),
+            LinearLayer(in_features=1, out_features=1)
         ]
 
     def forward(self, x: Variable) -> Variable:
@@ -188,38 +141,22 @@ class SGDOptimizer:
             param.value -= np.mean(param.grad, axis=0) * self.learning_rate
 
 
-def normalize(values: np.ndarray) -> np.ndarray:
-    min_values = np.min(values, axis=0)
-
-    return 2 * ((values - min_values) / (np.max(values, axis=0) - min_values) - 0.5)
-
-
 def main():
     plt.show()
 
-    data_x, data_y = sklearn.datasets.fetch_california_housing(return_X_y=True)
-    data_y = np.expand_dims(data_y, axis=1)
+    floors = np.array([1, 2, 4], dtype='float64')
+    prices = np.array([0.7, 1.5, 9.5], dtype='float64')
 
-    data_x = normalize(data_x)
-    data_y = normalize(data_y)
-
-    np.random.seed(0)
-    idx_rand = np.random.permutation(len(data_x))
-    data_x = data_x[idx_rand]
-    data_y = data_y[idx_rand]
-
-    idx_split = int(len(data_x) * 0.8)
-    dataset_train = (data_x[:idx_split], data_y[:idx_split])
-    dataset_test = (data_x[idx_split:], data_y[idx_split:])
-    np.random.seed(int(time.time()))
+    dataset_train = (floors, prices)
+    dataset_test = (np.array([3], dtype='float64'), np.array([4.5], dtype='float64'))
 
     epoch_count = 300
     learning_rate = 0.01
-    batch_size = 32
+    batch_size = 2
 
     model = Model()
     optimizer = SGDOptimizer(model.parameters(), learning_rate)
-    loss_fn = MSELoss()
+    loss_fn = MAELoss()
     losses_train = []
     losses_test = []
 

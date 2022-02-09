@@ -44,11 +44,19 @@ def model(w1: float, b1: float, w2: float, b2: float, x: np.array, slope: float)
     return leaky_relu(linear(w2, b2, x_hidden), slope)
 
 
-def dw_model(w: float, b: float, x: np.array, slope: float) -> float:
+def dw1_model(w1: float, b1: float, w2: float, b2: float, x: np.array, slope: float) -> float:
     return dx_leaky_relu(x, slope) * dx_tanh(x)
 
 
-def db_model(w: float, b: float, x: np.array, slope: float) -> float:
+def dw2_model(w1: float, b1: float, w2: float, b2: float, x: np.array, slope: float) -> float:
+    return dx_leaky_relu(x, slope) * dx_tanh(x)
+
+
+def db1_model(w1: float, b1: float, w2: float, b2: float, x: np.array, slope: float) -> float:
+    return dx_leaky_relu(x, slope) * dx_tanh(x)
+
+
+def db2_model(w1: float, b1: float, w2: float, b2: float, x: np.array, slope: float) -> float:
     return dx_leaky_relu(x, slope) * dx_tanh(x)
 
 
@@ -59,20 +67,20 @@ def loss(y: np.array, y_predicted: np.array) -> np.array:
     return np.mean(np.abs(y - y_predicted))
 
 
-def dw1_loss(y: np.array, y_predicted: np.array, w1: float, b1: float, w2: float, b2: float, x: np.array) -> np.array:
-    return None
+def dw1_loss(y: np.array, y_predicted: np.array, w1: float, b1: float, w2: float, b2: float, x: np.array, slope: float) -> np.array:
+    return dw2_loss(y, y_predicted, w1, b1, w2, b2, x, slope) * x
 
 
-def db1_loss(y: np.array, y_predicted: np.array, w1: float, b1: float, w2: float, b2: float, x: np.array) -> np.array:
-    return None
+def db1_loss(y: np.array, y_predicted: np.array, w1: float, b1: float, w2: float, b2: float, x: np.array, slope: float) -> np.array:
+    return db2_loss(y, y_predicted, w1, b1, w2, b2, x, slope) * 1
 
 
-def dw2_loss(y: np.array, y_predicted: np.array, w1: float, b1: float, w2: float, b2: float, x: np.array) -> np.array:
-    return None
+def dw2_loss(y: np.array, y_predicted: np.array, w1: float, b1: float, w2: float, b2: float, x: np.array, slope: float) -> np.array:
+    return 2 * np.mean((y_predicted - y) * dw2_model(w1, w2, w2, b2, x, slope))
 
 
-def db2_loss(y: np.array, y_predicted: np.array, w1: float, b1: float, w2: float, b2: float, x: np.array) -> np.array:
-    return None
+def db2_loss(y: np.array, y_predicted: np.array, w1: float, b1: float, w2: float, b2: float, x: np.array, slope: float) -> np.array:
+    return 2 * np.mean((y_predicted - y) * db2_model(w1, b1, w2, b2, x, slope))
 
 
 def predict(w1: float, b1: float, w2: float, b2: float, x: np.array, slope: float) -> np.array:
@@ -93,15 +101,15 @@ def fit(_model, x: np.array, y: np.array, epochs=1000000, learning_rate: float =
         # estimate the loss (MAE) between real prices and predicted
         _loss = loss(y, y_predicted)
 
-        _dw1_loss = dw1_loss(y, y_predicted, w1, b1, w2, b2, x)
-        _db1_loss = db1_loss(y, y_predicted, w1, b1, w2, b2, x)
-        _dw2_loss = dw2_loss(y, y_predicted, w1, b1, w2, b2, x)
-        _db2_loss = db2_loss(y, y_predicted, w1, b1, w2, b2, x)
+        _dw1_loss = dw1_loss(y, y_predicted, w1, b1, w2, b2, x, slope)
+        _db1_loss = db1_loss(y, y_predicted, w1, b1, w2, b2, x, slope)
+        _dw2_loss = dw2_loss(y, y_predicted, w1, b1, w2, b2, x, slope)
+        _db2_loss = db2_loss(y, y_predicted, w1, b1, w2, b2, x, slope)
 
-        w1 = w1 - learning_rate * _dw1_loss
-        b1 = b1 - learning_rate * _db1_loss
-        w2 = w2 - learning_rate * _dw2_loss
-        b2 = b2 - learning_rate * _db2_loss
+        w1 -= learning_rate * _dw1_loss
+        b1 -= learning_rate * _db1_loss
+        w2 -= learning_rate * _dw2_loss
+        b2 -= learning_rate * _db2_loss
 
     print(f'{w1=} {b1=} {w2=} {b2=} {_loss=}')
 

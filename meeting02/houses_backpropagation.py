@@ -44,11 +44,19 @@ def model(w1: float, b1: float, w2: float, b2: float, x: np.array, slope: float)
     return leaky_relu(linear(w2, b2, x_hidden), slope)
 
 
-def dw_model(w: float, b: float, x: np.array, slope: float) -> float:
+def dw1_model(w: float, b: float, x: np.array, slope: float) -> float:
     return dx_leaky_relu(x, slope) * dx_tanh(x)
 
 
-def db_model(w: float, b: float, x: np.array, slope: float) -> float:
+def dw2_model(w: float, b: float, x: np.array, slope: float) -> float:
+    return dx_leaky_relu(x, slope) * dx_tanh(x)
+
+
+def db1_model(w: float, b: float, x: np.array, slope: float) -> float:
+    return dx_leaky_relu(x, slope) * dx_tanh(x)
+
+
+def db2_model(w: float, b: float, x: np.array, slope: float) -> float:
     return dx_leaky_relu(x, slope) * dx_tanh(x)
 
 
@@ -98,10 +106,10 @@ def fit(_model, x: np.array, y: np.array, epochs=1000000, learning_rate: float =
         _dw2_loss = dw2_loss(y, y_predicted, w1, b1, w2, b2, x)
         _db2_loss = db2_loss(y, y_predicted, w1, b1, w2, b2, x)
 
-        w1 = w1 - learning_rate * _dw1_loss
-        b1 = b1 - learning_rate * _db1_loss
-        w2 = w2 - learning_rate * _dw2_loss
-        b2 = b2 - learning_rate * _db2_loss
+        w1 -= learning_rate * _dw1_loss
+        b1 -= learning_rate * _db1_loss
+        w2 -= learning_rate * _dw2_loss
+        b2 -= learning_rate * _db2_loss
 
     print(f'{w1=} {b1=} {w2=} {b2=} {_loss=}')
 

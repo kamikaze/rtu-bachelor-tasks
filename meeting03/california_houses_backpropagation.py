@@ -178,6 +178,19 @@ class Model:
         return variables
 
 
+class PreviousTaskModel(Model):
+    def __init__(self):
+        super().__init__()
+
+        self.layers = [
+            LinearLayer(in_features=8, out_features=4),
+            TanhLayer(),
+            LinearLayer(in_features=4, out_features=4),
+            LeakyReLULayer(),
+            LinearLayer(in_features=4, out_features=1)
+        ]
+
+
 class SGDOptimizer:
     def __init__(self, parameters: Sequence[Variable], learning_rate: float):
         self.parameters = parameters
@@ -214,9 +227,10 @@ def main():
     np.random.seed(int(time.time()))
 
     epoch_count = 300
-    learning_rate = 0.005
+    learning_rate = 0.01
     batch_size = 32
 
+    # model = PreviousTaskModel()
     model = Model()
     optimizer = SGDOptimizer(model.parameters(), learning_rate)
     loss_fn = MSELoss()

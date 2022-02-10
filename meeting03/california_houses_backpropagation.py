@@ -205,8 +205,8 @@ def main():
     data_x, data_y = sklearn.datasets.fetch_california_housing(return_X_y=True)
     data_y = np.expand_dims(data_y, axis=1)
 
-    data_x = normalize(data_x)
-    data_y = normalize(data_y)
+    data_x, _, _ = normalize(data_x)
+    data_y, _, _ = normalize(data_y)
 
     # Here we can verify that we restore initial values back.
     # mod_data_x = denormalize(*normalize(np.copy(data_x)))

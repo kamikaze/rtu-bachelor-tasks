@@ -102,9 +102,9 @@ class MAELoss:
 class Model:
     def __init__(self):
         self.layers = [
-            LinearLayer(in_features=1, out_features=1),
+            LinearLayer(in_features=1, out_features=4),
             TanhLayer(),
-            LinearLayer(in_features=1, out_features=1),
+            LinearLayer(in_features=4, out_features=1),
             LeakyReLULayer(slope=np.float64(0.000001))
         ]
 
@@ -151,7 +151,7 @@ def main():
     dataset_test = (np.array([[3]], dtype='float64'), np.array([[4.5]], dtype='float64'))
 
     epoch_count = 2000000
-    learning_rate = np.float64(0.0001)
+    learning_rate = np.float64(0.01)
     batch_size = 3
 
     model = Model()

@@ -1,5 +1,5 @@
 import time
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Tuple
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -188,10 +188,15 @@ class SGDOptimizer:
             param.value -= np.mean(param.grad, axis=0) * self.learning_rate
 
 
-def normalize(values: np.ndarray) -> np.ndarray:
+def normalize(values: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    max_values = np.max(values, axis=0)
     min_values = np.min(values, axis=0)
 
-    return 2 * ((values - min_values) / (np.max(values, axis=0) - min_values) - 0.5)
+    return 2.0 * ((values - min_values) / (max_values - min_values) - 0.5), min_values, max_values
+
+
+def denormalize(values: np.ndarray, min_values: np.ndarray, max_values: np.ndarray) -> np.ndarray:
+    return (values / 2.0 + 0.5) * (max_values - min_values) + min_values
 
 
 def main():
@@ -202,6 +207,10 @@ def main():
 
     data_x = normalize(data_x)
     data_y = normalize(data_y)
+
+    # Here we can verify that we restore initial values back.
+    # mod_data_x = denormalize(*normalize(np.copy(data_x)))
+    # mod_data_y = denormalize(*normalize(np.copy(data_y)))
 
     np.random.seed(0)
     idx_rand = np.random.permutation(len(data_x))
@@ -214,8 +223,8 @@ def main():
     np.random.seed(int(time.time()))
 
     epoch_count = 300
-    learning_rate = 0.01
-    batch_size = 32
+    learning_rate = 0.002
+    batch_size = 64
 
     model = Model()
     optimizer = SGDOptimizer(model.parameters(), learning_rate)
@@ -223,12 +232,15 @@ def main():
     losses_train = []
     losses_test = []
 
-    for epoch in range(epoch_count):
+    for epoch in range(epoch_count+1):
         for dataset in (dataset_train, dataset_test):
             data_x, data_y = dataset
             losses = []
 
-            for idx in range(0, len(data_x) - batch_size, batch_size):
+            x_cnt = len(data_x)
+            window = min(x_cnt, batch_size)
+
+            for idx in range(0, x_cnt - window + 1, window):
                 x = data_x[idx:idx+batch_size]
                 y = data_y[idx:idx+batch_size]
 
@@ -249,9 +261,8 @@ def main():
             else:
                 losses_test.append(mean_loss)
 
-        print(f'{epoch=} losses_train: {losses_train[-1]} losses_test: {losses_test[-1]}')
-
         if epoch % 10 == 0:
+            print(f'{epoch=} losses_train: {losses_train[-1]} losses_test: {losses_test[-1]}')
             plt.clf()
             plt.plot(losses_train)
             plt.plot(losses_test)

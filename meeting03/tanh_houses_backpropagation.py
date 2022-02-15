@@ -67,21 +67,22 @@ class TanhLayer:
 
 
 class LeakyReLULayer:
-    def __init__(self, slope: float = 0.01):
+    def __init__(self, slope: float = 1e-2):
         self.x = None
         self.output = None
         self.slope = slope
 
     def forward(self, x: Variable) -> Variable:
         self.x = x
-        self.output = Variable(
-            (x.value > 0) * x.value + (x.value <= 0) * x.value * self.slope
-        )
+        output = np.copy(x.value)
+        output[output <= 0] *= self.slope
+        self.output = Variable(output)
 
         return self.output
 
     def backward(self):
-        self.x.grad = (self.x.value > 0) * self.output.grad + (self.x.value <= 0) * self.output.grad * self.slope
+        self.x.grad[self.x.value > 0] = self.output.grad[self.x.value > 0]
+        self.x.grad[self.x.value <= 0] = self.output.grad[self.x.value <= 0] * self.slope
 
 
 class MAELoss:
@@ -105,7 +106,7 @@ class Model:
             LinearLayer(in_features=1, out_features=4),
             TanhLayer(),
             LinearLayer(in_features=4, out_features=1),
-            LeakyReLULayer(slope=np.float64(0.000001))
+            LeakyReLULayer(slope=np.float64(1e-2))
         ]
 
     def forward(self, x: Variable) -> Variable:
@@ -150,8 +151,8 @@ def main():
     dataset_train = (floors, prices)
     dataset_test = (np.array([[3]], dtype='float64'), np.array([[4.5]], dtype='float64'))
 
-    epoch_count = 2000000
-    learning_rate = np.float64(0.01)
+    epoch_count = 2_000_000
+    learning_rate = np.float64(1e-4)
     batch_size = 3
 
     model = Model()
@@ -192,8 +193,11 @@ def main():
         if epoch % 1000 == 0:
             print(f'{epoch=} losses_train: {losses_train[-1]} losses_test: {losses_test[-1]}')
             plt.clf()
-            plt.plot(losses_train)
-            plt.plot(losses_test)
+            plt.plot(losses_train, label='Train')
+            plt.plot(losses_test, label='Test')
+            plt.legend(loc='upper right')
+            plt.xlabel('epoch')
+            plt.ylabel('loss')
             plt.draw()
             plt.pause(0.01)
 

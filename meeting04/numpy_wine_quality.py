@@ -1,12 +1,11 @@
 import time
 from functools import reduce
-from typing import Optional
+from typing import Optional, Tuple
 
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import sklearn.datasets
-
 
 matplotlib.use('TkAgg')
 plt.rcParams['figure.figsize'] = (10, 10)
@@ -165,10 +164,22 @@ class OptimizerSGD:
             param.value -= np.mean(param.grad, axis=0) * self.learning_rate  # W = W - dW * alpha
 
 
+def normalize(values: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    max_values = np.max(values, axis=0)
+    min_values = np.min(values, axis=0)
+
+    return 2.0 * ((values - min_values) / (max_values - min_values) - 0.5), min_values, max_values
+
+
+def denormalize(values: np.ndarray, min_values: np.ndarray, max_values: np.ndarray) -> np.ndarray:
+    return (values / 2.0 + 0.5) * (max_values - min_values) + min_values
+
+
 def main():
     epoch_count = 1_000_000
     learning_rate = 1e-2
     features, classes = sklearn.datasets.load_wine(return_X_y=True)
+    features, _, _ = normalize(features)
     batch_size = len(features)
 
     np.random.seed(0)

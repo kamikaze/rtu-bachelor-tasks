@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sklearn.datasets
 import torch.nn
-from torch.nn import Module, Sequential, Linear, Tanh, LeakyReLU
+from torch.nn import Module, Sequential, Linear, Tanh, LeakyReLU, Softmax, CrossEntropyLoss
 from torch.optim import Adam
 
 torch.set_default_dtype(torch.float64)
@@ -15,6 +15,21 @@ device = torch.device('cpu')
 matplotlib.use('TkAgg')
 plt.rcParams['figure.figsize'] = (10, 10)
 plt.ion()
+
+
+class LossCrossEntropy:
+    def __init__(self):
+        self.y = None
+        self.y_prim = None
+
+    def forward(self, y, y_prim):
+        self.y = y
+        self.y_prim = y_prim
+
+        return torch.mean(-y * torch.log(y_prim))
+
+    def backward(self):
+        self.y_prim.grad = -self.y.value / self.y_prim.value
 
 
 def normalize(values: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -37,7 +52,8 @@ class Model(Module):
             Tanh(),
             Linear(in_features=10, out_features=5, device=device),
             LeakyReLU(),
-            Linear(in_features=5, out_features=1, device=device)
+            Linear(in_features=5, out_features=3, device=device),
+            Softmax(dim=1)
         )
 
     def forward(self, x):
@@ -49,26 +65,25 @@ class Model(Module):
 def main():
     plt.show()
 
-    data_x, data_y = sklearn.datasets.load_wine(return_X_y=True)
-    data_y = np.expand_dims(data_y, axis=1)
-
-    data_x, _, _ = normalize(data_x)
-    # TODO convert class number into array 0 -> [1 0 0] etc.
-    data_y, _, _ = normalize(data_y)
+    features, classes = sklearn.datasets.load_wine(return_X_y=True)
+    features, _, _ = normalize(features)
 
     np.random.seed(0)
-    idx_rand = np.random.permutation(len(data_x))
-    data_x = data_x[idx_rand]
-    data_y = data_y[idx_rand]
+    idxes_rand = np.random.permutation(len(features))
+    features = features[idxes_rand]
+    classes = classes[idxes_rand]
 
-    idx_split = int(len(data_x) * 0.8)
+    class_idxes = classes
+    classes = np.zeros((len(classes), len(np.unique(classes))))
+    classes[np.arange(len(classes)), class_idxes] = 1.0
+    idx_split = int(len(features) * 0.9)
     dataset_train = (
-        torch.tensor(data_x[:idx_split], device=device),
-        torch.tensor(data_y[:idx_split], device=device)
+        torch.tensor(features[:idx_split], device=device),
+        torch.tensor(classes[:idx_split], device=device)
     )
     dataset_test = (
-        torch.tensor(data_x[idx_split:], device=device),
-        torch.tensor(data_y[idx_split:], device=device)
+        torch.tensor(features[idx_split:], device=device),
+        torch.tensor(classes[idx_split:], device=device)
     )
     np.random.seed(int(time.time()))
 
@@ -79,13 +94,16 @@ def main():
     optimizer = Adam(params=model.parameters(), lr=learning_rate)
     losses_train = []
     losses_test = []
-    nrmse_train = []
-    nrmse_test = []
+    accuracy_train = []
+    accuracy_test = []
 
     y_max_train = torch.max(dataset_train[1])
     y_min_train = torch.min(dataset_train[1])
     y_max_test = torch.max(dataset_test[1])
     y_min_test = torch.min(dataset_test[1])
+
+    # loss_fn = LossCrossEntropy()
+    loss_fn = CrossEntropyLoss()
 
     for epoch in range(epoch_count+1):
         for dataset in (dataset_train, dataset_test):
@@ -93,44 +111,43 @@ def main():
 
             # Every FloatTensor has value/data and grad props as Variable class had
             y_prim = model.forward(x)
-            loss = torch.mean((y - y_prim) ** 2)
+            loss = loss_fn.forward(y, y_prim)
 
             if dataset is dataset_train:
-                scaler = 1.0 / (y_max_train - y_min_train)
                 loss.backward()
                 optimizer.step()
-            else:
-                scaler = 1.0 / (y_max_test - y_min_test)
 
             if epoch % 1000 == 0:
-                # Let's stop calculating gradients for loss
-                nrmse = torch.mean(scaler * torch.sqrt(torch.mean(loss.detach())))
-                # same as nrmse = scaler * torch.sqrt(torch.mean((y.detach() - y_prim.detach()) ** 2))
+                # Let's stop calculating gradients
+                with torch.no_grad():
+                    predicted = torch.max(y_prim.data, 1)[1]
+                    expected = torch.max(y.data, 1)[1]
+                    accuracy = (predicted == expected).sum() / y.size(0)
 
-                if dataset is dataset_train:
-                    losses_train.append(loss.item())
-                    nrmse_train.append(nrmse.item())
-                else:
-                    losses_test.append(loss.item())
-                    nrmse_test.append(nrmse.item())
+                    if dataset is dataset_train:
+                        losses_train.append(loss.item())
+                        accuracy_train.append(accuracy.item())
+                    else:
+                        losses_test.append(loss.item())
+                        accuracy_test.append(accuracy.item())
 
         if epoch % 1000 == 0:
             print(f'{epoch=} losses_train: {losses_train[-1]} losses_test: {losses_test[-1]}')
             plt.clf()
             plt.subplot(2, 1, 1)
-            plt.title('MSE')
+            plt.title('Cross-Entropy Loss')
             plt.plot(losses_train, label='Train')
             plt.plot(losses_test, label='Test')
             plt.legend(loc='upper right')
             plt.xlabel('epoch x1000')
             plt.ylabel('loss')
             plt.subplot(2, 1, 2)
-            plt.title('NRMSE')
-            plt.plot(nrmse_train, label='Train')
-            plt.plot(nrmse_test, label='Test')
-            plt.legend(loc='upper right')
+            plt.title('Accuracy')
+            plt.plot(accuracy_train, label='Train')
+            plt.plot(accuracy_test, label='Test')
+            plt.legend(loc='lower right')
             plt.xlabel('epoch x1000')
-            plt.ylabel('loss')
+            plt.ylabel('accuracy')
             plt.draw()
             plt.pause(0.01)
 

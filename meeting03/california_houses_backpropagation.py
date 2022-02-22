@@ -59,6 +59,7 @@ class TanhLayer:
         self.output = Variable(
             (x_exp - minus_x_exp) / (x_exp + minus_x_exp)
         )
+
         return self.output
 
     def backward(self):
@@ -100,21 +101,22 @@ class ReLULayer:
 
 
 class LeakyReLULayer:
-    def __init__(self, slope: float = 0.0000001):
+    def __init__(self, slope: float = 1e-2):
         self.x = None
         self.output = None
         self.slope = slope
 
     def forward(self, x: Variable) -> Variable:
         self.x = x
-        self.output = Variable(
-            (x.value > 0) * x.value + (x.value <= 0) * x.value * self.slope
-        )
+        output = np.copy(x.value)
+        output[output <= 0] *= self.slope
+        self.output = Variable(output)
 
         return self.output
 
     def backward(self):
-        self.x.grad = (self.x.value > 0) * self.output.grad + (self.x.value <= 0) * self.output.grad * self.slope
+        self.x.grad[self.x.value > 0] = self.output.grad[self.x.value > 0]
+        self.x.grad[self.x.value <= 0] = self.output.grad[self.x.value <= 0] * self.slope
 
 
 class MAELoss:
@@ -223,7 +225,7 @@ def main():
     np.random.seed(int(time.time()))
 
     epoch_count = 300
-    learning_rate = 0.002
+    learning_rate = 2e-3
     batch_size = 64
 
     model = Model()
@@ -264,8 +266,11 @@ def main():
         if epoch % 10 == 0:
             print(f'{epoch=} losses_train: {losses_train[-1]} losses_test: {losses_test[-1]}')
             plt.clf()
-            plt.plot(losses_train)
-            plt.plot(losses_test)
+            plt.plot(losses_train, label='Train')
+            plt.plot(losses_test, label='Test')
+            plt.legend(loc='upper right')
+            plt.xlabel('epoch')
+            plt.ylabel('loss')
             plt.draw()
             plt.pause(0.01)
 

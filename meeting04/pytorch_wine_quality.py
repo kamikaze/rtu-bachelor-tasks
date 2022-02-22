@@ -97,11 +97,6 @@ def main():
     accuracy_train = []
     accuracy_test = []
 
-    y_max_train = torch.max(dataset_train[1])
-    y_min_train = torch.min(dataset_train[1])
-    y_max_test = torch.max(dataset_test[1])
-    y_min_test = torch.min(dataset_test[1])
-
     # loss_fn = LossCrossEntropy()
     loss_fn = CrossEntropyLoss()
 

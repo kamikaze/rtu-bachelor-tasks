@@ -1,4 +1,3 @@
-import time
 from typing import Tuple
 
 import matplotlib
@@ -6,8 +5,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sklearn.datasets
 import torch.nn
-from torch.nn import Module, Sequential, Linear, Tanh, LeakyReLU, Softmax, CrossEntropyLoss
+from torch.nn import Module, Sequential, Linear, Tanh, Softmax
 from torch.optim import Adam
+from torch.utils.data import DataLoader, Dataset
 
 torch.set_default_dtype(torch.float64)
 # device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -17,8 +17,9 @@ plt.rcParams['figure.figsize'] = (10, 10)
 plt.ion()
 
 
-class LossCrossEntropy:
+class LossCrossEntropy(Module):
     def __init__(self):
+        super().__init__()
         self.y = None
         self.y_prim = None
 
@@ -28,19 +29,12 @@ class LossCrossEntropy:
 
         return torch.mean(-y * torch.log(y_prim))
 
-    def backward(self):
-        self.y_prim.grad = -self.y.value / self.y_prim.value
 
+def standardize(values: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    mean = np.mean(values, axis=0)
+    stddev = np.std(values, axis=0)
 
-def normalize(values: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    max_values = np.max(values, axis=0)
-    min_values = np.min(values, axis=0)
-
-    return 2.0 * ((values - min_values) / (max_values - min_values) - 0.5), min_values, max_values
-
-
-def denormalize(values: np.ndarray, min_values: np.ndarray, max_values: np.ndarray) -> np.ndarray:
-    return (values / 2.0 + 0.5) * (max_values - min_values) + min_values
+    return (values - mean) / stddev
 
 
 class Model(Module):
@@ -50,9 +44,7 @@ class Model(Module):
         self.layers = Sequential(
             Linear(in_features=13, out_features=10, device=device),
             Tanh(),
-            Linear(in_features=10, out_features=5, device=device),
-            LeakyReLU(),
-            Linear(in_features=5, out_features=3, device=device),
+            Linear(in_features=10, out_features=3, device=device),
             Softmax(dim=1)
         )
 
@@ -62,30 +54,42 @@ class Model(Module):
         return y_prim
 
 
+class WineDataset(Dataset):
+    def __init__(self, samples, labels):
+        self.labels = labels
+        self.samples = samples
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, index):
+        sample = self.samples[index]
+        label = self.labels[index]
+
+        return sample, label
+
+
 def main():
     plt.show()
 
     features, classes = sklearn.datasets.load_wine(return_X_y=True)
-    features, _, _ = normalize(features)
-
-    np.random.seed(0)
-    idxes_rand = np.random.permutation(len(features))
-    features = features[idxes_rand]
-    classes = classes[idxes_rand]
-
+    features = standardize(features)
     class_idxes = classes
     classes = np.zeros((len(classes), len(np.unique(classes))))
     classes[np.arange(len(classes)), class_idxes] = 1.0
+
     idx_split = int(len(features) * 0.9)
-    dataset_train = (
+    dataset_train = WineDataset(
         torch.tensor(features[:idx_split], device=device),
         torch.tensor(classes[:idx_split], device=device)
     )
-    dataset_test = (
+    dataset_test = WineDataset(
         torch.tensor(features[idx_split:], device=device),
         torch.tensor(classes[idx_split:], device=device)
     )
-    np.random.seed(int(time.time()))
+
+    train_dataloader = DataLoader(dataset_train, batch_size=32, shuffle=True)
+    test_dataloader = DataLoader(dataset_test, batch_size=32, shuffle=True)
 
     epoch_count = 1000000
     learning_rate = 1e-6
@@ -97,34 +101,32 @@ def main():
     accuracy_train = []
     accuracy_test = []
 
-    # loss_fn = LossCrossEntropy()
-    loss_fn = CrossEntropyLoss()
+    loss_fn = LossCrossEntropy()
 
     for epoch in range(epoch_count+1):
-        for dataset in (dataset_train, dataset_test):
-            x, y = dataset
+        for dataset_loader in (train_dataloader, test_dataloader):
+            for x, y in dataset_loader:
+                # Every FloatTensor has value/data and grad props as Variable class had
+                y_prim = model.forward(x)
+                loss = loss_fn.forward(y, y_prim)
 
-            # Every FloatTensor has value/data and grad props as Variable class had
-            y_prim = model.forward(x)
-            loss = loss_fn.forward(y, y_prim)
+                if dataset_loader is train_dataloader:
+                    loss.backward()
+                    optimizer.step()
 
-            if dataset is dataset_train:
-                loss.backward()
-                optimizer.step()
+                if epoch % 1000 == 0:
+                    # Let's stop calculating gradients
+                    with torch.no_grad():
+                        _, predicted = torch.max(y_prim.data, 1)
+                        _, expected = torch.max(y.data, 1)
+                        accuracy = (predicted == expected).sum() / y.size(0)
 
-            if epoch % 1000 == 0:
-                # Let's stop calculating gradients
-                with torch.no_grad():
-                    predicted = torch.max(y_prim.data, 1)[1]
-                    expected = torch.max(y.data, 1)[1]
-                    accuracy = (predicted == expected).sum() / y.size(0)
-
-                    if dataset is dataset_train:
-                        losses_train.append(loss.item())
-                        accuracy_train.append(accuracy.item())
-                    else:
-                        losses_test.append(loss.item())
-                        accuracy_test.append(accuracy.item())
+                        if dataset_loader is train_dataloader:
+                            losses_train.append(loss.item())
+                            accuracy_train.append(accuracy.item())
+                        else:
+                            losses_test.append(loss.item())
+                            accuracy_test.append(accuracy.item())
 
         if epoch % 1000 == 0:
             print(f'{epoch=} losses_train: {losses_train[-1]} losses_test: {losses_test[-1]}')

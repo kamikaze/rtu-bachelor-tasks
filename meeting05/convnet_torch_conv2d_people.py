@@ -107,22 +107,25 @@ class Model(torch.nn.Module):
         super().__init__()
 
         self.encoder = torch.nn.Sequential(
-            Conv2d(in_channels=1, out_channels=10, kernel_size=5, stride=2, padding=1),
+            Conv2d(in_channels=1, out_channels=3, kernel_size=9, stride=2, padding=1),
             ReLU(),
-            Conv2d(in_channels=10, out_channels=20, kernel_size=3, stride=2, padding=1),
+            Conv2d(in_channels=3, out_channels=6, kernel_size=7, stride=2, padding=1),
             ReLU(),
-            Conv2d(in_channels=20, out_channels=30, kernel_size=3, stride=2, padding=1),
+            Conv2d(in_channels=6, out_channels=12, kernel_size=5, stride=2, padding=1),
             ReLU(),
-            Conv2d(in_channels=30, out_channels=36, kernel_size=3, stride=2, padding=1)
+            Conv2d(in_channels=12, out_channels=24, kernel_size=3, stride=2, padding=1),
+            ReLU(),
+            Conv2d(in_channels=24, out_channels=48, kernel_size=3, stride=2, padding=1)
         )
 
-        o_1 = get_out_size(INPUT_SIZE, kernel_size=5, stride=2, padding=1)
-        o_2 = get_out_size(o_1, kernel_size=3, stride=2, padding=1)
-        o_3 = get_out_size(o_2, kernel_size=3, stride=2, padding=1)
+        o_1 = get_out_size(INPUT_SIZE, kernel_size=9, stride=2, padding=1)
+        o_2 = get_out_size(o_1, kernel_size=7, stride=2, padding=1)
+        o_3 = get_out_size(o_2, kernel_size=5, stride=2, padding=1)
         o_4 = get_out_size(o_3, kernel_size=3, stride=2, padding=1)
+        o_5 = get_out_size(o_4, kernel_size=3, stride=2, padding=1)
 
         self.fc = Linear(
-            in_features=36*o_4*o_4,
+            in_features=48*o_5*o_5,
             out_features=feature_count
         )
 
@@ -142,7 +145,7 @@ class Model(torch.nn.Module):
 
 def main():
     data = fetch_lfw_people(data_home='../data', color=False, resize=0.112, slice_=None)
-    idx_split = int(len(data.images) * 0.9)
+    idx_split = int(len(data.images) * 0.8)
     feature_count = max(data.target) + 1
 
     model = Model(feature_count)
@@ -197,7 +200,7 @@ def main():
                 if stage in key:
                     value = np.mean(metrics_epoch[key])
                     metrics[key].append(value)
-                    metrics_strs.append(f'{key}: {round(value, 2)}')
+                    metrics_strs.append(f'{key}: {value}')
 
             print(f'epoch: {epoch} {" ".join(metrics_strs)}')
 

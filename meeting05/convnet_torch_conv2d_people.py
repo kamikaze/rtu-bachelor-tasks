@@ -7,10 +7,8 @@ import torch.utils.data
 from sklearn.datasets import fetch_lfw_people
 from torch.nn import ReLU, Linear, Parameter
 
-torch.set_default_dtype(torch.float32)
 matplotlib.use('TkAgg')
 plt.rcParams['figure.figsize'] = (10, 10)
-plt.ion()
 
 has_cuda = torch.cuda.is_available()
 
@@ -23,11 +21,11 @@ INPUT_SIZE = 28
 
 
 class DatasetLFWPeople(torch.utils.data.Dataset):
-    def __init__(self, images, labels, feature_count: int):
+    def __init__(self, images, labels, class_count: int):
         super().__init__()
         self.images = images
         self.labels = labels
-        self.feature_count = feature_count
+        self.class_count = class_count
 
     def __len__(self):
         if MAX_LEN:
@@ -39,14 +37,21 @@ class DatasetLFWPeople(torch.utils.data.Dataset):
         # list tuple np.array torch.FloatTensor
         pil_x = self.images[idx]
         y_idx = self.labels[idx]
-        np_x = np.array(pil_x, dtype='float32')
+        np_x = np.array(pil_x, dtype='float64')
         np_x = np.expand_dims(np_x, axis=0)
         x = torch.tensor(np_x, device=DEVICE)
-        np_y = np.zeros((self.feature_count,), dtype='float32')
+        np_y = np.zeros((self.class_count,), dtype='float64')
         np_y[y_idx] = 1.0
         y = torch.tensor(np_y, device=DEVICE)
 
         return x, y
+
+
+def standardize(values: np.ndarray) -> np.ndarray:
+    mean = np.mean(values, axis=0)
+    stddev = np.std(values, axis=0)
+
+    return (values - mean) / stddev
 
 
 def get_out_size(in_size: int, padding: int, kernel_size: int, stride: int) -> int:
@@ -103,7 +108,7 @@ class Conv2d(torch.nn.Module):
 
 
 class Model(torch.nn.Module):
-    def __init__(self, feature_count: int):
+    def __init__(self, class_count: int):
         super().__init__()
 
         self.encoder = torch.nn.Sequential(
@@ -126,7 +131,7 @@ class Model(torch.nn.Module):
 
         self.fc = Linear(
             in_features=48*o_5*o_5,
-            out_features=feature_count
+            out_features=class_count
         )
 
     def forward(self, x):
@@ -144,11 +149,12 @@ class Model(torch.nn.Module):
 
 
 def main():
-    data = fetch_lfw_people(data_home='../data', color=False, resize=0.112, slice_=None)
-    idx_split = int(len(data.images) * 0.8)
-    feature_count = max(data.target) + 1
+    data = fetch_lfw_people(data_home='../data', color=False, resize=0.112, slice_=None, min_faces_per_person=100)
+    images = tuple(map(standardize, data.images))
+    idx_split = int(len(images) * 0.8)
+    class_count = max(data.target) + 1
 
-    model = Model(feature_count)
+    model = Model(class_count)
     model.to(DEVICE)
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
     metrics = {}
@@ -158,13 +164,13 @@ def main():
             metrics[f'{stage}_{metric}'] = []
 
     data_loader_train = torch.utils.data.DataLoader(
-        dataset=DatasetLFWPeople(data.images[:idx_split], data.target[:idx_split], feature_count),
+        dataset=DatasetLFWPeople(images[:idx_split], data.target[:idx_split], class_count),
         batch_size=BATCH_SIZE,
         shuffle=True
     )
 
     data_loader_test = torch.utils.data.DataLoader(
-        dataset=DatasetLFWPeople(data.images[idx_split:], data.target[idx_split:], feature_count),
+        dataset=DatasetLFWPeople(images[idx_split:], data.target[idx_split:], class_count),
         batch_size=BATCH_SIZE,
         shuffle=False
     )
@@ -184,7 +190,7 @@ def main():
                 if data_loader == data_loader_train:
                     loss.backward()
                     optimizer.step()
-                    optimizer.zero_grad()
+                    # optimizer.zero_grad()
 
                 np_y_prim = y_prim.cpu().data.numpy()
                 np_y = y.cpu().data.numpy()

@@ -104,7 +104,8 @@ class Conv2d(torch.nn.Module):
                 x_part = x_part.reshape(batch_size, -1)
 
                 # size == (B, out_channels)
-                out_part = x_part @ K
+                # out_part = x_part @ K
+                out_part = (K.t() @ x_part.unsqueeze(dim=-1)).squeeze(dim=-1)
                 out[:, :, i_out, j_out] = out_part
 
                 j_out += 1

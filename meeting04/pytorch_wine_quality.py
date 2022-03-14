@@ -56,7 +56,7 @@ def get_confusion_matrix(expected, predicted) -> np.ndarray:
     matrix = np.zeros(shape=(3, 3), dtype=np.int)
 
     for expected_item, predicted_item in zip(expected, predicted):
-        matrix[expected_item][predicted_item] += 1
+        matrix[expected_item, predicted_item] += 1
 
     return matrix
 

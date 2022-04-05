@@ -193,23 +193,15 @@ def main():
             print(f'epoch: {epoch} {" ".join(metrics_strs)}')
 
         plt.clf()
-        plt.subplot(121)  # row col idx
         plts = []
         c = 0
 
         for key, value in metrics.items():
             value = scipy.ndimage.gaussian_filter1d(value, sigma=2)
             plts += plt.plot(value, f'C{c}', label=key)
-            ax = plt.twinx()
             c += 1
 
         plt.legend(plts, [it.get_label() for it in plts])
-
-        for i, j in enumerate([4, 5, 6, 10, 11, 12, 16, 17, 18]):
-            plt.subplot(3, 6, j)
-            color = 'green' if idx_y_prim[i] == idx_y[i] else 'red'
-            plt.title(f"pred: {idx_y_prim[i]}\n real: {idx_y[i]}", c=color)
-            plt.imshow(x[i].permute(1, 2, 0))
 
         plt.tight_layout(pad=0.5)
         plt.draw()

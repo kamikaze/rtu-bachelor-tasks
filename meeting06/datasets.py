@@ -19,7 +19,7 @@ from torchvision.io import read_image
 
 torch.set_default_dtype(torch.float64)
 USE_CUDA = torch.cuda.is_available()
-MAX_LEN = None if USE_CUDA else 200
+MAX_LEN = None if USE_CUDA else 1
 
 
 class DatasetFlickrImage(torch.utils.data.Dataset):
@@ -169,11 +169,11 @@ class DatasetFlickrImageZarr(torch.utils.data.Dataset):
                 if idx >= MAX_LEN - 1:
                     break
 
-            self.y[:] = torch.tensor(y, dtype=torch.long)
+            self.y[:] = np.array(y)
 
         self.root = zarr.open(str(dataset_file_path), mode='r')
         self.x = self.root['samples']
-        self.y = F.one_hot(self.root['labels'])
+        self.y = F.one_hot(torch.LongTensor(self.root['labels']))
         self.data_length = len(self.y)
 
     def __len__(self):

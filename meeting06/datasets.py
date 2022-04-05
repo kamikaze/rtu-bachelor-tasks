@@ -169,11 +169,11 @@ class DatasetFlickrImageZarr(torch.utils.data.Dataset):
                 if idx >= MAX_LEN - 1:
                     break
 
-            self.y[:] = torch.tensor(y, dtype=torch.long)
+            self.y[:] = np.array(y)
 
         self.root = zarr.open(str(dataset_file_path), mode='r')
         self.x = self.root['samples']
-        self.y = F.one_hot(self.root['labels'])
+        self.y = F.one_hot(torch.LongTensor(self.root['labels']))
         self.data_length = len(self.y)
 
     def __len__(self):

@@ -15,7 +15,6 @@ torch.set_default_dtype(torch.float64)
 USE_CUDA = torch.cuda.is_available()
 TRAIN_TEST_SPLIT = 0.8
 BATCH_SIZE = 32
-MAX_LEN = None if USE_CUDA else 200
 
 
 class LossCrossEntropy(torch.nn.Module):

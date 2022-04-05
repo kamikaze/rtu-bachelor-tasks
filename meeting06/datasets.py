@@ -19,7 +19,7 @@ from torchvision.io import read_image
 
 torch.set_default_dtype(torch.float64)
 USE_CUDA = torch.cuda.is_available()
-MAX_LEN = None if USE_CUDA else 1
+MAX_LEN = None if USE_CUDA else 200
 
 
 class DatasetFlickrImage(torch.utils.data.Dataset):

@@ -1,5 +1,5 @@
 import torch
-import torch.nn.functional as F
+from torch.nn import functional
 
 
 class InceptionBlock(torch.nn.Module):
@@ -40,7 +40,8 @@ class InceptionBlock(torch.nn.Module):
         out4 = self.conv42(out4)
 
         out = torch.cat([out1, out2, out3, out4], dim=1)
-        out = F.relu(out)
+        # out = F.relu(out)
+        out = functional.elu(out, alpha=1.1, inplace=True)
         out = self.bn.forward(out)
 
         return out
@@ -63,19 +64,20 @@ class InceptionNet(torch.nn.Module):
     def forward(self, x):
         out = self.conv1.forward(x)
         out = self.max_pool1.forward(out)
-        out = F.relu(out)
+        # out = F.relu(out)
+        out = functional.elu(out, alpha=1.1, inplace=True)
 
         out = self.inception_block1.forward(out)
 
         out = self.conv2.forward(out)
         out = self.max_pool2.forward(out)
-        out = F.relu(out)
+        # out = F.relu(out)
+        out = functional.elu(out, alpha=1.1, inplace=True)
 
         out = self.inception_block2.forward(out)
 
-        # B, 384, 133, 133 -> 384x133x133
         out = out.view(-1, 384 * 4 * 133 * 133)
         out = self.linear.forward(out)
-        out = F.softmax(out, dim=1)
+        out = functional.softmax(out, dim=1)
 
         return out

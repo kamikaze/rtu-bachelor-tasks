@@ -1,0 +1,20 @@
+1) install NVIDIA MLNX_OFED (optional? networking)
+    https://docs.nvidia.com/networking/spaces/viewspace.action?key=MLNXOFEDv543100
+    https://docs.nvidia.com/gpudirect-storage/troubleshooting-guide/index.html#mofed-req-install
+
+2) sudo mount -o data=ordered /dev/nvme0n1 /mnt
+
+3) To verify that GDS installation was successful, run gdscheck:
+
+    $ /usr/local/cuda-<x>.<y>/gds/tools/gdscheck.py -p
+
+    Note: The gdscheck command expects python3 to be present on the system. If it fails because of python3 not being available then you can invoke the command with the explicit path to where python (i.e. python2) is installed. For example:
+
+    $ /usr/bin/python /usr/local/cuda-<x>.<y>/gds/tools/gdscheck.py -p
+
+    The output of this command shows whether a supported filesystem or device installed on the system supports GDS. The output also shows whether PCIe ACS is enabled on any of the PCI switches.
+
+4)  For best GDS performance, disable PCIe ACS.
+    https://forums.developer.nvidia.com/t/multi-gpu-peer-to-peer-access-failing-on-tesla-k80/39748/13
+
+5) Disable IOMMU. When the IOMMU setting is enabled, PCIe traffic has to be routed through the CPU root ports. This routing limits the maximum achievable throughput for configurations where the GPU and NIC are under the same PCIe switch. Before you install GDS, you must disable IOMMU.

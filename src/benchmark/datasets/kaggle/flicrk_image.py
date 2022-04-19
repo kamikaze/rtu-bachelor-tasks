@@ -4,7 +4,7 @@ from abc import abstractmethod
 from operator import itemgetter
 from pathlib import Path
 from shutil import rmtree
-from typing import Optional, Mapping
+from typing import Optional, Mapping, Iterator
 
 import numpy as np
 import torch
@@ -38,6 +38,9 @@ class DatasetFlickrImage(KaggleDataset):
             # Removing duplicated data
             rmtree(Path(self.image_dir_path, self.DATASET_DIR_NAME), ignore_errors=True)
             Path(self.image_dir_path, self.RESULT_FILE_NAME).unlink(missing_ok=True)
+
+    def _prepare(self, force: bool = False):
+        pass
 
 
 class DatasetFlickrImageFilesystem(DatasetFlickrImage):
@@ -234,6 +237,9 @@ class DatasetFlickrImageNumpyMmap(DatasetFlickrImage):
             str(self.dataset_file_path), mode='r', dtype='float16', shape=self.dataset_shape
         )
         self.y = F.one_hot(torch.tensor(self.y, dtype=torch.long))
+
+    def iter_images(self) -> Iterator:
+        pass
 
     def __getitem__(self, index):
         x = self.x[index]

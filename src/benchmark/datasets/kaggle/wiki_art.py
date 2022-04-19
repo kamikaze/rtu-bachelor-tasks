@@ -3,8 +3,7 @@ import json
 from abc import abstractmethod
 from operator import itemgetter
 from pathlib import Path
-from shutil import rmtree
-from typing import Optional, Mapping
+from typing import Optional, Mapping, Iterator
 
 import numpy as np
 import torch
@@ -14,7 +13,6 @@ import torch.utils.data
 import torch.utils.data
 import zarr
 from PIL import Image, UnidentifiedImageError
-from PIL.Image import Resampling
 from numpy.lib.format import open_memmap
 from torchvision.io import read_image
 
@@ -22,7 +20,7 @@ from meeting06.datasets.kaggle import KaggleDataset
 from meeting06.datasets.utils import adjust_image
 
 
-class DatasetWikiArt(KaggleDataset):
+class WikiArtDataset(KaggleDataset):
     DATASET_NAME = 'ipythonx/wikiart-gangogh-creating-art-gan'
     BYTES_PER_VALUE = 16 / 8
     DATASET_DIR_NAME = 'wikiart'
@@ -42,7 +40,7 @@ class DatasetWikiArt(KaggleDataset):
             super()._download(force)
 
     @staticmethod
-    def _iter_images(root: Path, min_size: Optional[int] = None):
+    def iter_images(root: Path, min_size: Optional[int] = None):
         dir_names = sorted(
             file_item.name for file_item in filter(lambda i: i.is_dir() and i.name[0] != '.', root.iterdir())
         )
@@ -62,7 +60,7 @@ class DatasetWikiArt(KaggleDataset):
     def _get_min_size(self, limit_size: Optional[int] = None):
         min_size = 999999
 
-        for _, image in self._iter_images(self.dataset_path, limit_size):
+        for _, image in self.iter_images(self.dataset_path, limit_size):
             width, height = image.size
 
             # Filter out images with any dimension smaller than self.IMAGE_WIDTH px
@@ -71,7 +69,6 @@ class DatasetWikiArt(KaggleDataset):
         return min_size
 
     @staticmethod
-    @abstractmethod
     def _resize_images(size: int):
         pass
 
@@ -98,7 +95,7 @@ class DatasetWikiArt(KaggleDataset):
                 json.dump(metadata, fm)
 
 
-class DatasetWikiArtFilesystem(DatasetWikiArt):
+class DatasetWikiArtFilesystem(WikiArtDataset):
     IMAGE_DIR_NAME = '.crops'
     METADATA_FILE_NAME = 'metadata_fs.json'
 
@@ -108,7 +105,7 @@ class DatasetWikiArtFilesystem(DatasetWikiArt):
 
         self.image_dir_path.mkdir(exist_ok=True)
 
-        for idx, image in self._iter_images(self.dataset_path, size):
+        for idx, image in self.iter_images(self.dataset_path, size):
             crop_dir_path = Path(self.image_dir_path, str(idx))
             file_name = Path(image.filename).name
 
@@ -164,7 +161,7 @@ class DatasetWikiArtFilesystem(DatasetWikiArt):
         return x, y
 
 
-class DatasetWikiArtZarr(DatasetWikiArt):
+class DatasetWikiArtZarr(WikiArtDataset):
     def __init__(self, root: Path, transform=None, target_transform=None, chunks=None):
         super().__init__(root, transform, target_transform)
         self.dataset_file_path = Path(self.dataset_path, 'data.zarr')
@@ -228,7 +225,7 @@ class DatasetWikiArtZarr(DatasetWikiArt):
         return x, self.y[index]
 
 
-class DatasetWikiArtNumpyMmap(DatasetWikiArt):
+class DatasetWikiArtNumpyMmap(WikiArtDataset):
     DATASET_DTYPE = 'float16'
     METADATA_FILE_NAME = 'metadata_numpy_mmap.json'
 
@@ -239,7 +236,7 @@ class DatasetWikiArtNumpyMmap(DatasetWikiArt):
     def __count_images(self, min_size: Optional[int] = None) -> int:
         cnt = sum(
             int(min(image.width, image.height) >= min_size)
-            for _, image in self._iter_images(self.dataset_path)
+            for _, image in self.iter_images(self.dataset_path)
         )
 
         return cnt
@@ -254,7 +251,7 @@ class DatasetWikiArtNumpyMmap(DatasetWikiArt):
         )
         y = []
 
-        for idx, (dir_idx, image) in enumerate(self._iter_images(self.dataset_path, size)):
+        for idx, (dir_idx, image) in enumerate(self.iter_images(self.dataset_path, size)):
             file_name = Path(image.filename).name
 
             try:
@@ -310,11 +307,11 @@ class DatasetWikiArtNumpyMmap(DatasetWikiArt):
         return x, self.y[index]
 
 
-class DatasetWikiArtHDF5(DatasetWikiArt):
+class DatasetWikiArtHDF5(WikiArtDataset):
     pass
 
 
-class DatasetWikiArtCuPyMmap(DatasetWikiArt):
+class DatasetWikiArtCuPyMmap(WikiArtDataset):
     DATASET_DTYPE = 'float16'
     METADATA_FILE_NAME = 'metadata_cupy_mmap.json'
 
@@ -325,7 +322,7 @@ class DatasetWikiArtCuPyMmap(DatasetWikiArt):
     def __count_images(self, min_size: Optional[int] = None) -> int:
         cnt = sum(
             int(min(image.width, image.height) >= min_size)
-            for _, image in self._iter_images(self.dataset_path)
+            for _, image in self.iter_images(self.dataset_path)
         )
 
         return cnt
@@ -340,7 +337,7 @@ class DatasetWikiArtCuPyMmap(DatasetWikiArt):
         )
         y = []
 
-        for idx, (dir_idx, image) in enumerate(self._iter_images(self.dataset_path, size)):
+        for idx, (dir_idx, image) in enumerate(self.iter_images(self.dataset_path, size)):
             file_name = Path(image.filename).name
 
             try:
@@ -387,6 +384,9 @@ class DatasetWikiArtCuPyMmap(DatasetWikiArt):
             str(self.dataset_file_path), mode='r', dtype=self.DATASET_DTYPE, shape=self.dataset_shape
         )
         self.y = F.one_hot(torch.tensor(self.y, dtype=torch.long))
+
+    def iter_images(self) -> Iterator:
+        pass
 
     def __getitem__(self, index):
         x = self.x[index]

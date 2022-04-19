@@ -1,9 +1,10 @@
+from abc import ABC
 from pathlib import Path
 
 from meeting06.datasets import BaseDataset
 
 
-class KaggleDataset(BaseDataset):
+class KaggleDataset(BaseDataset, ABC):
     BYTES_PER_VALUE = None
     DATASET_NAME = None
     IMAGE_DIR_NAME = None

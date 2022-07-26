@@ -8,8 +8,8 @@ import torch
 from PIL import Image
 from torch.nn import functional
 
-from meeting06.datasets import BaseDataset
-from meeting06.datasets.utils import adjust_image
+from benchmark.datasets import BaseDataset
+from benchmark.datasets.utils import adjust_image
 
 
 class ImageFileStorage(ABC):

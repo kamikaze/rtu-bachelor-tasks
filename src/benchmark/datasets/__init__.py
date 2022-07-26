@@ -6,7 +6,7 @@ import torch
 import torch.utils.data
 from torch.utils.data.dataset import T_co
 
-from meeting06.image_storages import ImageFileStorage
+from benchmark.storages import ImageFileStorage
 
 USE_CUDA = torch.cuda.is_available()
 

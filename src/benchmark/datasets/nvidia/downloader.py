@@ -8,25 +8,26 @@
 
 """Download Flickr-Faces-HQ (FFHQ) dataset to current working directory."""
 
-import os
-import sys
-import requests
-import html
+import argparse
+import glob
 import hashlib
+import html
+import itertools
+import json
+import os
+import queue
+import shutil
+import sys
+import threading
+import time
+import uuid
+from collections import OrderedDict, defaultdict
+
 import PIL.Image
 import PIL.ImageFile
 import numpy as np
+import requests
 import scipy.ndimage
-import threading
-import queue
-import time
-import json
-import uuid
-import glob
-import argparse
-import itertools
-import shutil
-from collections import OrderedDict, defaultdict
 
 PIL.ImageFile.LOAD_TRUNCATED_IMAGES = True  # avoid "Decompressed Data Too Large" error
 json_spec = dict(file_url='https://drive.google.com/uc?id=16N0RV4fHI6joBuKbQAoG34V_cQk7vxSA',

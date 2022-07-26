@@ -1,17 +1,13 @@
 import json
-from abc import abstractmethod
-from collections import defaultdict
 from pathlib import Path
 from typing import Optional
 
 import numpy as np
 import torch
-import torch.nn.functional as F
-import torch.utils.data
-import torch.utils.data
 import torch.utils.data
 from PIL import Image, UnidentifiedImageError
 from numpy.lib.format import open_memmap
+from torch.nn import functional
 
 from benchmark.datasets.kaggle import KaggleDataset
 from benchmark.datasets.utils import adjust_image
@@ -223,7 +219,7 @@ class DatasetMasksImageFiles(FaceMasksDataset):
         self.y = metadata['labels']
         self.data_length = len(self.y)
 
-        self.y = F.one_hot(torch.tensor(self.y, dtype=torch.long))
+        self.y = functional.one_hot(torch.tensor(self.y, dtype=torch.long))
 
     def __getitem__(self, index):
         x_path = str(Path(self.dataset_subdir_path, self.x[index]))
@@ -302,7 +298,7 @@ class DatasetMasksNumpyZipFiles(FaceMasksDataset):
         self.y = metadata['labels']
         self.data_length = len(self.y)
 
-        self.y = F.one_hot(torch.tensor(self.y, dtype=torch.long))
+        self.y = functional.one_hot(torch.tensor(self.y, dtype=torch.long))
 
     def __getitem__(self, index):
         x_path = str(Path(self.dataset_subdir_path, self.x[index]))
@@ -385,7 +381,7 @@ class DatasetMasksNumpyMmap(FaceMasksDataset):
         self.x = open_memmap(
             str(self.dataset_file_path), mode='r', dtype=self.DATASET_DTYPE, shape=self.dataset_shape
         )
-        self.y = F.one_hot(torch.tensor(self.y, dtype=torch.long))
+        self.y = functional.one_hot(torch.tensor(self.y, dtype=torch.long))
 
 #    def __len__(self):
 #        return 10000

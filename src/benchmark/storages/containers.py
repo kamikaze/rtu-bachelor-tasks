@@ -5,12 +5,10 @@ from typing import Optional
 import numpy as np
 import torch
 import torch.utils.data
-
-from numpy.lib.format import open_memmap
-from torch.nn import functional
-
 from meeting06.datasets.utils import adjust_image
 from meeting06.storages import ImageFileStorage
+from numpy.lib.format import open_memmap
+from torch.nn import functional
 
 
 class NumpyZipImageStorage(ImageFileStorage):

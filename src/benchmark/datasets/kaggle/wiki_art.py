@@ -1,23 +1,20 @@
 import csv
 import json
-from abc import abstractmethod
 from operator import itemgetter
 from pathlib import Path
 from typing import Optional, Mapping, Iterator
 
 import numpy as np
 import torch
-import torch.nn.functional as F
-import torch.utils.data
-import torch.utils.data
 import torch.utils.data
 import zarr
 from PIL import Image, UnidentifiedImageError
 from numpy.lib.format import open_memmap
+from torch.nn import functional
 from torchvision.io import read_image
 
-from meeting06.datasets.kaggle import KaggleDataset
-from meeting06.datasets.utils import adjust_image
+from benchmark.datasets.kaggle import KaggleDataset
+from benchmark.datasets.utils import adjust_image
 
 
 class WikiArtDataset(KaggleDataset):
@@ -146,7 +143,7 @@ class DatasetWikiArtFilesystem(WikiArtDataset):
             self.y = self.target_transform(self.y)
 
         # So I transform it manually inside
-        self.y = F.one_hot(torch.tensor(self.y, dtype=torch.long))
+        self.y = functional.one_hot(torch.tensor(self.y, dtype=torch.long))
 
     def __getitem__(self, index):
         image_path = Path(self.image_dir_path, self.x[index])
@@ -213,7 +210,7 @@ class DatasetWikiArtZarr(WikiArtDataset):
 
         self.root = zarr.open(str(self.dataset_file_path), mode='r')
         self.x = self.root['samples']
-        self.y = F.one_hot(torch.tensor(self.root['labels'], dtype=torch.long))
+        self.y = functional.one_hot(torch.tensor(self.root['labels'], dtype=torch.long))
         self.data_length = len(self.y)
 
     def __getitem__(self, index):
@@ -297,7 +294,7 @@ class DatasetWikiArtNumpyMmap(WikiArtDataset):
         self.x = open_memmap(
             str(self.dataset_file_path), mode='r', dtype=self.DATASET_DTYPE, shape=self.dataset_shape
         )
-        self.y = F.one_hot(torch.tensor(self.y, dtype=torch.long))
+        self.y = functional.one_hot(torch.tensor(self.y, dtype=torch.long))
 
     def __getitem__(self, index):
         x = self.x[index]
@@ -383,7 +380,7 @@ class DatasetWikiArtCuPyMmap(WikiArtDataset):
         self.x = open_memmap(
             str(self.dataset_file_path), mode='r', dtype=self.DATASET_DTYPE, shape=self.dataset_shape
         )
-        self.y = F.one_hot(torch.tensor(self.y, dtype=torch.long))
+        self.y = functional.one_hot(torch.tensor(self.y, dtype=torch.long))
 
     def iter_images(self) -> Iterator:
         pass

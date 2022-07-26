@@ -8,7 +8,6 @@ import torch
 from PIL import Image
 from torch.nn import functional
 
-from benchmark.datasets import BaseDataset
 from benchmark.datasets.utils import adjust_image
 
 
@@ -20,7 +19,7 @@ class ImageFileStorage(ABC):
     def __str__(self):
         return self.DATASET_SUBDIR_NAME
 
-    def store_dataset(self, dataset: BaseDataset):
+    def store_dataset(self, dataset):
         dataset_subdir_path: Path = dataset.dataset_path / str(self)
         dataset_subdir_path.mkdir(exist_ok=True)
 

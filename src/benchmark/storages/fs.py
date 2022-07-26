@@ -1,4 +1,4 @@
-from meeting06.storages import ImageFileStorage
+from benchmark.storages import ImageFileStorage
 
 
 class JPEGImageStorage(ImageFileStorage):

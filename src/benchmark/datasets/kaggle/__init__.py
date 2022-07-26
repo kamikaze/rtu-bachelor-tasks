@@ -1,7 +1,7 @@
 from abc import ABC
 from pathlib import Path
 
-from meeting06.datasets import BaseDataset
+from benchmark.datasets import BaseDataset
 
 
 class KaggleDataset(BaseDataset, ABC):

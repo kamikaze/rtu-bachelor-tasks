@@ -13,8 +13,8 @@ import torch.utils.data
 from PIL import Image, UnidentifiedImageError
 from numpy.lib.format import open_memmap
 
-from meeting06.datasets.kaggle import KaggleDataset
-from meeting06.datasets.utils import adjust_image
+from benchmark.datasets.kaggle import KaggleDataset
+from benchmark.datasets.utils import adjust_image
 
 
 class FaceMasksDataset(KaggleDataset):

@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import torch.utils.data
 
 from benchmark.datasets import BaseDataset, PyTorchDataset
+from benchmark.datasets.kaggle.face_masks import FaceMasksDataset
+from benchmark.datasets.kaggle.wiki_art import WikiArtDataset
 from benchmark.datasets.nvidia.ffhq import NvidiaFFHQDataset
 from benchmark.models.inception import InceptionNet
 from benchmark.runner import benchmark_dataset
@@ -49,9 +51,9 @@ def main():
     epochs = 100
 
     datasets: list[BaseDataset] = [
-        # FaceMasksDataset(root=data_root_path),
-        # WikiArtDataset(root=data_root_path),
-        NvidiaFFHQDataset(root=data_root_path),
+        FaceMasksDataset(root=data_root_path),
+        WikiArtDataset(root=data_root_path),
+        # NvidiaFFHQDataset(root=data_root_path),
     ]
     storages: list[ImageFileStorage] = [
         JPEGImageStorage(quality=100),

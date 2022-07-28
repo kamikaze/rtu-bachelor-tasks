@@ -25,6 +25,7 @@ class FaceMasksDataset(KaggleDataset):
     IMAGE_DIR_NAME = 'images'
     IMAGE_HEIGHT = 512
     IMAGE_WIDTH = 512
+    METADATA_FILE_NAME = 'metadata.json'
     RESULT_FILE_NAME = 'df.csv'
     LABELS = {
         0: 'The mask is worn correctly, covers the nose and mouth.',

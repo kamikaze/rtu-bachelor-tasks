@@ -1,5 +1,5 @@
 dataset-format-benchmark==0.0.4
-dataset-image-annotator==0.0.6
+dataset-image-annotator==0.0.7
 kaggle==1.5.12
 jupyterlab==3.4.8
 matplotlib==3.6.0

@@ -7,6 +7,7 @@ Task solution for RTU bachelor work
 python3.10 -m venv venv --upgrade-deps
 source venv/bin/activate
 python -m pip install -U -r requirements_dev.txt
+python -m pip install -U --pre torch torchvision --extra-index-url https://download.pytorch.org/whl/nightly/cu117
 python -m pip install -U -r requirements.txt
 ```
 

@@ -15,8 +15,10 @@ python -m pip install -U -r requirements.txt
 ```bash
 python -m dataset_image_annotator --data-root /path/to/dataset/images/
 ```
+Source code repo: https://github.com/kamikaze/dataset-image-annotator
 
 ## Running dataset format benchmark
 ```bash
 python -m dataset_format_benchmark --data-root /path/to/datasets/
 ```
+Source code repo: https://github.com/kamikaze/dataset-format-benchmark

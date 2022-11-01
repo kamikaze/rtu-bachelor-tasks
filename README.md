@@ -9,10 +9,10 @@ source venv/bin/activate
 python -m pip install -U -r requirements_dev.txt
 
 # For running on Nvidia GPU:
-python -m pip install -U torch torchvision
+python -m pip install -U torch torchvision --extra-index-url https://download.pytorch.org/whl/cu117
 
 # For running on CPU:
-python -m pip install -U torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
+python -m pip install -U torch torchvision --extra-index-url https://download.pytorch.org/whl/cpu
 
 python -m pip install -U -r requirements.txt
 ```

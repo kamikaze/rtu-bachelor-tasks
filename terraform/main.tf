@@ -20,13 +20,21 @@ resource "aws_vpc" "rtu_bachelor_vpc" {
   cidr_block = "10.0.0.0/16"
 }
 
+resource "aws_subnet" "rtu_bachelor_subnet" {
+  vpc_id     = aws_vpc.rtu_bachelor_vpc.id
+  cidr_block = "10.0.1.0/24"
+}
+
 # Security groups
 
 resource "aws_security_group" "rtu_bachelor_ssh_sg" {
-  depends_on  = [aws_vpc.rtu_bachelor_vpc]
+  depends_on = [
+    aws_vpc.rtu_bachelor_vpc,
+    aws_subnet.rtu_bachelor_subnet
+  ]
   name        = "rtu-bachelor-ssh-sg"
   description = "SSH security group"
-#  vpc_id      = aws_vpc.rtu_bachelor_vpc.id
+  vpc_id      = aws_vpc.rtu_bachelor_vpc.id
 
   ingress {
     from_port   = 22
@@ -41,13 +49,20 @@ resource "aws_security_group" "rtu_bachelor_ssh_sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = {
+    Name = "rtu-bachelor-ssh-sg"
+  }
 }
 
 resource "aws_security_group" "rtu_bachelor_postgres_sg" {
-  depends_on  = [aws_vpc.rtu_bachelor_vpc]
+  depends_on = [
+    aws_vpc.rtu_bachelor_vpc,
+    aws_subnet.rtu_bachelor_subnet
+  ]
   name        = "rtu-bachelor-postgres-sg"
   description = "PostgreSQL security group"
-#  vpc_id      = aws_vpc.rtu_bachelor_vpc.id
+  vpc_id      = aws_vpc.rtu_bachelor_vpc.id
 
   ingress {
     from_port   = 5432
@@ -61,6 +76,10 @@ resource "aws_security_group" "rtu_bachelor_postgres_sg" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "rtu-bachelor-postgres-sg"
   }
 }
 
@@ -79,6 +98,15 @@ resource "aws_s3_bucket_acl" "rtu_dataset_transport_raw_acl" {
   acl    = "private"
 }
 
+resource "aws_s3_bucket_public_access_block" "rtu_dataset_transport_raw_pab" {
+  bucket = aws_s3_bucket.rtu_dataset_transport_raw.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
 resource "aws_s3_bucket" "rtu_dataset_transport_gen" {
   bucket = "rtu-dataset-transport-gen"
 
@@ -90,6 +118,15 @@ resource "aws_s3_bucket" "rtu_dataset_transport_gen" {
 resource "aws_s3_bucket_acl" "rtu_dataset_transport_gen_acl" {
   bucket = aws_s3_bucket.rtu_dataset_transport_gen.id
   acl    = "private"
+}
+
+resource "aws_s3_bucket_public_access_block" "rtu_dataset_transport_gen_pab" {
+  bucket = aws_s3_bucket.rtu_dataset_transport_gen.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
 resource "aws_s3_bucket" "rtu_dataset_transport_thumb" {
@@ -108,14 +145,19 @@ resource "aws_s3_bucket_acl" "rtu_dataset_transport_thumb_acl" {
 # EC2 instances
 
 resource "aws_spot_instance_request" "k3s_master_spot_ec2_instance" {
-  depends_on                     = [aws_security_group.rtu_bachelor_ssh_sg]
+  depends_on = [
+    aws_vpc.rtu_bachelor_vpc,
+    aws_subnet.rtu_bachelor_subnet,
+    aws_security_group.rtu_bachelor_ssh_sg
+  ]
   ami                            = "ami-0c76bf0e69c8a6228"
   spot_price                     = "0.01"
   spot_type                      = "persistent"
   instance_type                  = "t4g.small"
-  instance_interruption_behavior = "hibernate"
-  wait_for_fulfillment           = "true"
+  instance_interruption_behavior = "stop"
+  wait_for_fulfillment           = true
   key_name                       = "cl-dev-keypair"
+  subnet_id                      = aws_subnet.rtu_bachelor_subnet.id
   vpc_security_group_ids         = [aws_security_group.rtu_bachelor_ssh_sg.id]
 
   tags = {
@@ -128,6 +170,8 @@ resource "aws_spot_instance_request" "k3s_master_spot_ec2_instance" {
 
 resource "aws_spot_instance_request" "rtu_cpu_spot_ec2_instance" {
   depends_on = [
+    aws_vpc.rtu_bachelor_vpc,
+    aws_subnet.rtu_bachelor_subnet,
     aws_security_group.rtu_bachelor_ssh_sg,
     aws_spot_instance_request.k3s_master_spot_ec2_instance
   ]
@@ -135,9 +179,10 @@ resource "aws_spot_instance_request" "rtu_cpu_spot_ec2_instance" {
   spot_price                     = "1.00"
   spot_type                      = "persistent"
   instance_type                  = "c6g.16xlarge"
-  instance_interruption_behavior = "hibernate"
-  wait_for_fulfillment           = "true"
+  instance_interruption_behavior = "stop"
+  wait_for_fulfillment           = true
   key_name                       = "cl-dev-keypair"
+  subnet_id                      = aws_subnet.rtu_bachelor_subnet.id
   vpc_security_group_ids         = [aws_security_group.rtu_bachelor_ssh_sg.id]
 
   tags = {
@@ -150,6 +195,8 @@ resource "aws_spot_instance_request" "rtu_cpu_spot_ec2_instance" {
 
 #resource "aws_spot_instance_request" "rtu_gpu_spot_ec2_instance" {
 #  depends_on = [
+#    aws_vpc.rtu_bachelor_vpc,
+#    aws_subnet.rtu_bachelor_subnet,
 #    aws_security_group.rtu_bachelor_ssh_sg,
 #    aws_spot_instance_request.k3s_master_spot_ec2_instance
 #  ]
@@ -157,9 +204,10 @@ resource "aws_spot_instance_request" "rtu_cpu_spot_ec2_instance" {
 #  spot_price                     = "1.75"
 #  spot_type                      = "persistent"
 #  instance_type                  = "g5.16xlarge"
-#  instance_interruption_behavior = "hibernate"
-#  wait_for_fulfillment           = "true"
+#  instance_interruption_behavior = "stop"
+#  wait_for_fulfillment           = true
 #  key_name                       = "cl-dev-keypair"
+#  subnet_id                      = aws_subnet.rtu_bachelor_subnet.id
 #  vpc_security_group_ids         = [aws_security_group.rtu_bachelor_ssh_sg.id]
 #
 #  tags = {

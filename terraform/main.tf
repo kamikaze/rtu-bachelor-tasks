@@ -18,19 +18,121 @@ provider "aws" {
 
 resource "aws_vpc" "rtu_bachelor_vpc" {
   cidr_block = "10.0.0.0/16"
+
+  tags = {
+    Name         = "rtu-bachelor-vpc",
+    Organization = "RTU"
+  }
 }
 
-resource "aws_subnet" "rtu_bachelor_subnet" {
-  vpc_id     = aws_vpc.rtu_bachelor_vpc.id
-  cidr_block = "10.0.1.0/24"
+# # Internet gateway
+
+resource "aws_internet_gateway" "rtu_bachelor_internet_gateway" {
+  depends_on = [
+    aws_vpc.rtu_bachelor_vpc
+  ]
+
+  vpc_id = aws_vpc.rtu_bachelor_vpc.id
+}
+
+# Subnets
+
+resource "aws_subnet" "rtu_bachelor_subnet_eu_north_1a" {
+  depends_on = [
+    aws_vpc.rtu_bachelor_vpc
+  ]
+
+  vpc_id            = aws_vpc.rtu_bachelor_vpc.id
+  availability_zone = "eu-north-1a"
+  cidr_block        = "10.0.1.0/24"
+
+  tags = {
+    Name         = "rtu-bachelor-subnet-eu-north-1a",
+    Organization = "RTU"
+  }
+}
+
+resource "aws_subnet" "rtu_bachelor_subnet_eu_north_1b" {
+  depends_on = [
+    aws_vpc.rtu_bachelor_vpc
+  ]
+
+  vpc_id            = aws_vpc.rtu_bachelor_vpc.id
+  availability_zone = "eu-north-1b"
+  cidr_block        = "10.0.2.0/24"
+
+  tags = {
+    Name         = "rtu-bachelor-subnet-eu-north-1b",
+    Organization = "RTU"
+  }
+}
+
+resource "aws_subnet" "rtu_bachelor_subnet_eu_north_1c" {
+  depends_on = [
+    aws_vpc.rtu_bachelor_vpc
+  ]
+
+  vpc_id            = aws_vpc.rtu_bachelor_vpc.id
+  availability_zone = "eu-north-1c"
+  cidr_block        = "10.0.3.0/24"
+
+  tags = {
+    Name         = "rtu-bachelor-subnet-eu-north-1c",
+    Organization = "RTU"
+  }
+}
+
+# Route table
+
+resource "aws_route_table" "rtu_bachelor_route_table" {
+  depends_on = [
+    aws_vpc.rtu_bachelor_vpc,
+    aws_internet_gateway.rtu_bachelor_internet_gateway
+  ]
+
+  vpc_id = aws_vpc.rtu_bachelor_vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.rtu_bachelor_internet_gateway.id
+  }
+}
+
+resource "aws_route_table_association" "rtu_bachelor_subnet_eu_north_1a_rtb_assoc" {
+  depends_on = [
+    aws_route_table.rtu_bachelor_route_table,
+    aws_subnet.rtu_bachelor_subnet_eu_north_1a
+  ]
+
+  subnet_id      = aws_subnet.rtu_bachelor_subnet_eu_north_1a.id
+  route_table_id = aws_route_table.rtu_bachelor_route_table.id
+}
+
+resource "aws_route_table_association" "rtu_bachelor_subnet_eu_north_1b_rtb_assoc" {
+  depends_on = [
+    aws_route_table.rtu_bachelor_route_table,
+    aws_subnet.rtu_bachelor_subnet_eu_north_1b
+  ]
+
+  subnet_id      = aws_subnet.rtu_bachelor_subnet_eu_north_1b.id
+  route_table_id = aws_route_table.rtu_bachelor_route_table.id
+}
+
+resource "aws_route_table_association" "rtu_bachelor_subnet_eu_north_1c_rtb_assoc" {
+  depends_on = [
+    aws_route_table.rtu_bachelor_route_table,
+    aws_subnet.rtu_bachelor_subnet_eu_north_1c
+  ]
+
+  subnet_id      = aws_subnet.rtu_bachelor_subnet_eu_north_1c.id
+  route_table_id = aws_route_table.rtu_bachelor_route_table.id
 }
 
 # Security groups
 
 resource "aws_security_group" "rtu_bachelor_ssh_sg" {
   depends_on = [
-    aws_vpc.rtu_bachelor_vpc,
-    aws_subnet.rtu_bachelor_subnet
+    aws_vpc.rtu_bachelor_vpc
   ]
   name        = "rtu-bachelor-ssh-sg"
   description = "SSH security group"
@@ -51,14 +153,14 @@ resource "aws_security_group" "rtu_bachelor_ssh_sg" {
   }
 
   tags = {
-    Name = "rtu-bachelor-ssh-sg"
+    Name         = "rtu-bachelor-ssh-sg",
+    Organization = "RTU"
   }
 }
 
 resource "aws_security_group" "rtu_bachelor_postgres_sg" {
   depends_on = [
-    aws_vpc.rtu_bachelor_vpc,
-    aws_subnet.rtu_bachelor_subnet
+    aws_vpc.rtu_bachelor_vpc
   ]
   name        = "rtu-bachelor-postgres-sg"
   description = "PostgreSQL security group"
@@ -79,7 +181,8 @@ resource "aws_security_group" "rtu_bachelor_postgres_sg" {
   }
 
   tags = {
-    Name = "rtu-bachelor-postgres-sg"
+    Name         = "rtu-bachelor-postgres-sg",
+    Organization = "RTU"
   }
 }
 
@@ -88,8 +191,13 @@ resource "aws_security_group" "rtu_bachelor_postgres_sg" {
 resource "aws_s3_bucket" "rtu_dataset_transport_raw" {
   bucket = "rtu-dataset-transport-raw"
 
+  #  lifecycle {
+  #    prevent_destroy = true
+  #  }
+
   tags = {
-    Name = "RTU Dataset: Transport RAW"
+    Name         = "RTU Dataset: Transport RAW",
+    Organization = "RTU"
   }
 }
 
@@ -110,8 +218,13 @@ resource "aws_s3_bucket_public_access_block" "rtu_dataset_transport_raw_pab" {
 resource "aws_s3_bucket" "rtu_dataset_transport_gen" {
   bucket = "rtu-dataset-transport-gen"
 
+  #  lifecycle {
+  #    prevent_destroy = true
+  #  }
+
   tags = {
-    Name = "RTU Dataset: Transport generated"
+    Name         = "RTU Dataset: Transport generated",
+    Organization = "RTU"
   }
 }
 
@@ -132,8 +245,13 @@ resource "aws_s3_bucket_public_access_block" "rtu_dataset_transport_gen_pab" {
 resource "aws_s3_bucket" "rtu_dataset_transport_thumb" {
   bucket = "rtu-dataset-transport-thumb"
 
+  #  lifecycle {
+  #    prevent_destroy = true
+  #  }
+
   tags = {
-    Name = "RTU Dataset: Transport thumbnails"
+    Name         = "RTU Dataset: Transport thumbnails",
+    Organization = "RTU"
   }
 }
 
@@ -142,12 +260,26 @@ resource "aws_s3_bucket_acl" "rtu_dataset_transport_thumb_acl" {
   acl    = "public-read"
 }
 
+# ECR
+
+resource "aws_ecr_repository" "rtu_dataset_converter" {
+  name = "rtu-dataset-converter"
+
+  #  lifecycle {
+  #    prevent_destroy = true
+  #  }
+
+  tags = {
+    Name         = "rtu-dataset-converter"
+    Organization = "RTU"
+  }
+}
+
 # EC2 instances
 
 resource "aws_spot_instance_request" "k3s_master_spot_ec2_instance" {
   depends_on = [
-    aws_vpc.rtu_bachelor_vpc,
-    aws_subnet.rtu_bachelor_subnet,
+    aws_subnet.rtu_bachelor_subnet_eu_north_1a,
     aws_security_group.rtu_bachelor_ssh_sg
   ]
   ami                            = "ami-0c76bf0e69c8a6228"
@@ -157,21 +289,21 @@ resource "aws_spot_instance_request" "k3s_master_spot_ec2_instance" {
   instance_interruption_behavior = "stop"
   wait_for_fulfillment           = true
   key_name                       = "cl-dev-keypair"
-  subnet_id                      = aws_subnet.rtu_bachelor_subnet.id
+  subnet_id                      = aws_subnet.rtu_bachelor_subnet_eu_north_1a.id
   vpc_security_group_ids         = [aws_security_group.rtu_bachelor_ssh_sg.id]
 
   tags = {
-    Arch      = "arm64"
-    HasGPU    = "no"
-    Name      = "k3s-master1"
-    SpotPrice = "yes"
+    Arch         = "arm64"
+    HasGPU       = "no"
+    Name         = "k3s-master1",
+    Organization = "RTU"
+    SpotPrice    = "yes"
   }
 }
 
 resource "aws_spot_instance_request" "rtu_cpu_spot_ec2_instance" {
   depends_on = [
-    aws_vpc.rtu_bachelor_vpc,
-    aws_subnet.rtu_bachelor_subnet,
+    aws_subnet.rtu_bachelor_subnet_eu_north_1a,
     aws_security_group.rtu_bachelor_ssh_sg,
     aws_spot_instance_request.k3s_master_spot_ec2_instance
   ]
@@ -182,21 +314,21 @@ resource "aws_spot_instance_request" "rtu_cpu_spot_ec2_instance" {
   instance_interruption_behavior = "stop"
   wait_for_fulfillment           = true
   key_name                       = "cl-dev-keypair"
-  subnet_id                      = aws_subnet.rtu_bachelor_subnet.id
+  subnet_id                      = aws_subnet.rtu_bachelor_subnet_eu_north_1a.id
   vpc_security_group_ids         = [aws_security_group.rtu_bachelor_ssh_sg.id]
 
   tags = {
-    Arch      = "arm64"
-    HasGPU    = "no"
-    Name      = "rtu-cpu-monster1"
-    SpotPrice = "yes"
+    Arch         = "arm64"
+    HasGPU       = "no"
+    Name         = "rtu-cpu-monster1",
+    Organization = "RTU"
+    SpotPrice    = "yes"
   }
 }
 
 #resource "aws_spot_instance_request" "rtu_gpu_spot_ec2_instance" {
 #  depends_on = [
-#    aws_vpc.rtu_bachelor_vpc,
-#    aws_subnet.rtu_bachelor_subnet,
+#    aws_subnet.rtu_bachelor_subnet_eu_north_1a,
 #    aws_security_group.rtu_bachelor_ssh_sg,
 #    aws_spot_instance_request.k3s_master_spot_ec2_instance
 #  ]
@@ -207,18 +339,23 @@ resource "aws_spot_instance_request" "rtu_cpu_spot_ec2_instance" {
 #  instance_interruption_behavior = "stop"
 #  wait_for_fulfillment           = true
 #  key_name                       = "cl-dev-keypair"
-#  subnet_id                      = aws_subnet.rtu_bachelor_subnet.id
+#  subnet_id                      = aws_subnet.rtu_bachelor_subnet_eu_north_1a.id
 #  vpc_security_group_ids         = [aws_security_group.rtu_bachelor_ssh_sg.id]
 #
 #  tags = {
-#    Arch      = "amd64"
-#    HasGPU    = "yes"
-#    Name      = "rtu-gpu-monster1"
-#    SpotPrice = "yes"
+#    Arch         = "amd64"
+#    HasGPU       = "yes"
+#    Name         = "rtu-gpu-monster1",
+#    Organization = "RTU"
+#    SpotPrice    = "yes"
 #  }
 #}
 
 # Outputs
+
+output "ecr_repository_url" {
+  value = aws_ecr_repository.rtu_dataset_converter.repository_url
+}
 
 output "k3s_master_ip" {
   value = aws_spot_instance_request.k3s_master_spot_ec2_instance.public_ip

@@ -1,3 +1,28 @@
+variable "db_username" {
+  type        = string
+  nullable    = false
+  default     = "bachelor"
+  description = "Username for a postgres database"
+}
+
+variable "db_password" {
+  type        = string
+  nullable    = false
+  default     = "bachelorbachelor18"
+  description = "Password for a postgres database"
+
+  validation {
+    condition     = length(var.db_password) >= 18
+    error_message = "Database password must be at least 18 characters long."
+  }
+}
+
+variable "eks-cluster-name" {
+  type    = string
+  default = "rtu-bachelor-eks"
+}
+
+
 terraform {
   required_providers {
     aws = {
@@ -67,9 +92,9 @@ resource "aws_subnet" "rtu_bachelor_subnet_eu_north_1a" {
     aws_default_route_table.rtu_bachelor_default_rtb
   ]
 
-  vpc_id                  = aws_vpc.rtu_bachelor_vpc.id
-  availability_zone       = "eu-north-1a"
-  cidr_block              = "10.0.1.0/24"
+  vpc_id            = aws_vpc.rtu_bachelor_vpc.id
+  availability_zone = "eu-north-1a"
+  cidr_block        = "10.0.1.0/24"
 
   tags = {
     Name         = "rtu-bachelor-subnet-eu-north-1a",
@@ -83,9 +108,9 @@ resource "aws_subnet" "rtu_bachelor_subnet_eu_north_1b" {
     aws_default_route_table.rtu_bachelor_default_rtb
   ]
 
-  vpc_id                  = aws_vpc.rtu_bachelor_vpc.id
-  availability_zone       = "eu-north-1b"
-  cidr_block              = "10.0.2.0/24"
+  vpc_id            = aws_vpc.rtu_bachelor_vpc.id
+  availability_zone = "eu-north-1b"
+  cidr_block        = "10.0.2.0/24"
 
   tags = {
     Name         = "rtu-bachelor-subnet-eu-north-1b",
@@ -99,9 +124,9 @@ resource "aws_subnet" "rtu_bachelor_subnet_eu_north_1c" {
     aws_default_route_table.rtu_bachelor_default_rtb
   ]
 
-  vpc_id                  = aws_vpc.rtu_bachelor_vpc.id
-  availability_zone       = "eu-north-1c"
-  cidr_block              = "10.0.3.0/24"
+  vpc_id            = aws_vpc.rtu_bachelor_vpc.id
+  availability_zone = "eu-north-1c"
+  cidr_block        = "10.0.3.0/24"
 
   tags = {
     Name         = "rtu-bachelor-subnet-eu-north-1c",
@@ -335,6 +360,83 @@ resource "aws_spot_instance_request" "k3s_master_spot_ec2_instance" {
 #  }
 #}
 
+# RDS subnet
+
+resource "aws_db_subnet_group" "rtu_bachelor_db_subnet_group" {
+  depends_on = [
+    aws_subnet.rtu_bachelor_subnet_eu_north_1a,
+    aws_subnet.rtu_bachelor_subnet_eu_north_1b,
+    aws_subnet.rtu_bachelor_subnet_eu_north_1c,
+  ]
+  name = "rtu-bachelor-db-subnet-group"
+  subnet_ids = [
+    aws_subnet.rtu_bachelor_subnet_eu_north_1a.id,
+    aws_subnet.rtu_bachelor_subnet_eu_north_1b.id,
+    aws_subnet.rtu_bachelor_subnet_eu_north_1c.id
+  ]
+}
+
+# RDS
+
+resource "aws_db_instance" "rtu_bachelor_db_master" {
+  depends_on = [
+    aws_security_group.rtu_bachelor_postgres_sg,
+    aws_db_subnet_group.rtu_bachelor_db_subnet_group
+  ]
+
+  identifier              = "rtu-bachelor-db"
+  engine                  = "postgres"
+  engine_version          = "14.6"
+  db_name                 = "datasets"
+  instance_class          = "db.t4g.micro"
+  storage_type            = "gp2"
+  allocated_storage       = 10
+  backup_retention_period = 7
+  availability_zone       = "eu-north-1a"
+  maintenance_window      = "Sun:04:00-Sun:06:00"
+  backup_window           = "02:00-03:00"
+  apply_immediately       = true
+  db_subnet_group_name    = aws_db_subnet_group.rtu_bachelor_db_subnet_group.name
+  vpc_security_group_ids  = [aws_security_group.rtu_bachelor_postgres_sg.id]
+  username                = var.db_username
+  password                = var.db_password
+  skip_final_snapshot     = true
+
+  tags = {
+    Organization = "RTU"
+  }
+}
+
+#locals {
+#  replicas = [1, 2, 3]
+#  azs      = ["a", "b", "c"]
+#}
+#
+#resource "aws_db_instance" "rtu_bachelor_db_ro_replica" {
+#  depends_on = [
+#    aws_security_group.rtu_bachelor_postgres_sg,
+#    aws_db_subnet_group.rtu_bachelor_db_subnet_group,
+#    aws_db_instance.rtu_bachelor_db_master
+#  ]
+#  count = length(local.replicas)
+#
+#  identifier              = "rtu-bachelor-db-ro${local.replicas[count.index]}"
+#  instance_class          = "db.t4g.micro"
+#  storage_type            = "gp2"
+#  backup_retention_period = 7
+#  availability_zone       = "eu-north-1${local.azs[count.index]}"
+#  replicate_source_db     = aws_db_instance.rtu_bachelor_db_master.id
+#  maintenance_window      = "Sun:04:00-Sun:06:00"
+#  backup_window           = "02:00-03:00"
+#  apply_immediately       = true
+#  vpc_security_group_ids  = [aws_security_group.rtu_bachelor_postgres_sg.id]
+#  skip_final_snapshot     = true
+#
+#  tags = {
+#    Organization = "RTU"
+#  }
+#}
+
 # Outputs
 
 output "ecr_repository_url" {
@@ -351,4 +453,12 @@ output "k3s_master_ip" {
 
 #output "rtu_gpu_monster_ip" {
 #  value = aws_spot_instance_request.rtu_gpu_spot_ec2_instance.public_ip
+#}
+
+output "rtu_bachelor_db_master_ip" {
+  value = aws_db_instance.rtu_bachelor_db_master.address
+}
+
+#output "rtu_bachelor_db_ro_replica_ip" {
+#  value = aws_db_instance.rtu_bachelor_db_ro_replica[*].address
 #}

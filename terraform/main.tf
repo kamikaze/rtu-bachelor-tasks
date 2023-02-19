@@ -41,28 +41,9 @@ resource "aws_internet_gateway" "rtu_bachelor_internet_gateway" {
 
 # Route table
 
-resource "aws_route_table" "rtu_bachelor_main_route_table" {
-  depends_on = [
-    aws_vpc.rtu_bachelor_vpc,
-    aws_internet_gateway.rtu_bachelor_internet_gateway
-  ]
-
-  vpc_id = aws_vpc.rtu_bachelor_vpc.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.rtu_bachelor_internet_gateway.id
-  }
-
-  tags = {
-    Name         = "rtu-bachelor-main-rtb",
-    Organization = "RTU"
-  }
-}
-
 resource "aws_default_route_table" "rtu_bachelor_default_rtb" {
   depends_on = [
-    aws_route_table.rtu_bachelor_main_route_table
+    aws_vpc.rtu_bachelor_vpc
   ]
 
   route {
@@ -70,24 +51,12 @@ resource "aws_default_route_table" "rtu_bachelor_default_rtb" {
     gateway_id = aws_internet_gateway.rtu_bachelor_internet_gateway.id
   }
 
-  default_route_table_id = aws_route_table.rtu_bachelor_main_route_table.id
+  default_route_table_id = aws_vpc.rtu_bachelor_vpc.default_route_table_id
 
   tags = {
     Name         = "rtu-bachelor-default-rtb",
     Organization = "RTU"
   }
-}
-
-# Main route table association
-
-resource "aws_main_route_table_association" "rtu_bachelor_main_rtb_assoc" {
-  depends_on = [
-    aws_vpc.rtu_bachelor_vpc,
-    aws_default_route_table.rtu_bachelor_default_rtb
-  ]
-
-  vpc_id         = aws_vpc.rtu_bachelor_vpc.id
-  route_table_id = aws_default_route_table.rtu_bachelor_default_rtb.id
 }
 
 # Subnets
@@ -101,7 +70,6 @@ resource "aws_subnet" "rtu_bachelor_subnet_eu_north_1a" {
   vpc_id                  = aws_vpc.rtu_bachelor_vpc.id
   availability_zone       = "eu-north-1a"
   cidr_block              = "10.0.1.0/24"
-  map_public_ip_on_launch = true
 
   tags = {
     Name         = "rtu-bachelor-subnet-eu-north-1a",
@@ -118,7 +86,6 @@ resource "aws_subnet" "rtu_bachelor_subnet_eu_north_1b" {
   vpc_id                  = aws_vpc.rtu_bachelor_vpc.id
   availability_zone       = "eu-north-1b"
   cidr_block              = "10.0.2.0/24"
-  map_public_ip_on_launch = true
 
   tags = {
     Name         = "rtu-bachelor-subnet-eu-north-1b",
@@ -135,44 +102,11 @@ resource "aws_subnet" "rtu_bachelor_subnet_eu_north_1c" {
   vpc_id                  = aws_vpc.rtu_bachelor_vpc.id
   availability_zone       = "eu-north-1c"
   cidr_block              = "10.0.3.0/24"
-  map_public_ip_on_launch = true
 
   tags = {
     Name         = "rtu-bachelor-subnet-eu-north-1c",
     Organization = "RTU"
   }
-}
-
-# Route table to subnet associations
-
-resource "aws_route_table_association" "rtu_bachelor_subnet_eu_north_1a_rtb_assoc" {
-  depends_on = [
-    aws_default_route_table.rtu_bachelor_default_rtb,
-    aws_subnet.rtu_bachelor_subnet_eu_north_1a
-  ]
-
-  subnet_id      = aws_subnet.rtu_bachelor_subnet_eu_north_1a.id
-  route_table_id = aws_default_route_table.rtu_bachelor_default_rtb.id
-}
-
-resource "aws_route_table_association" "rtu_bachelor_subnet_eu_north_1b_rtb_assoc" {
-  depends_on = [
-    aws_default_route_table.rtu_bachelor_default_rtb,
-    aws_subnet.rtu_bachelor_subnet_eu_north_1b
-  ]
-
-  subnet_id      = aws_subnet.rtu_bachelor_subnet_eu_north_1b.id
-  route_table_id = aws_default_route_table.rtu_bachelor_default_rtb.id
-}
-
-resource "aws_route_table_association" "rtu_bachelor_subnet_eu_north_1c_rtb_assoc" {
-  depends_on = [
-    aws_default_route_table.rtu_bachelor_default_rtb,
-    aws_subnet.rtu_bachelor_subnet_eu_north_1c
-  ]
-
-  subnet_id      = aws_subnet.rtu_bachelor_subnet_eu_north_1c.id
-  route_table_id = aws_default_route_table.rtu_bachelor_default_rtb.id
 }
 
 # Security groups
@@ -338,6 +272,7 @@ resource "aws_spot_instance_request" "k3s_master_spot_ec2_instance" {
   key_name                       = "cl-dev-keypair"
   subnet_id                      = aws_subnet.rtu_bachelor_subnet_eu_north_1a.id
   vpc_security_group_ids         = [aws_security_group.rtu_bachelor_ssh_sg.id]
+  associate_public_ip_address    = true
 
   tags = {
     Arch         = "arm64"
@@ -363,6 +298,7 @@ resource "aws_spot_instance_request" "k3s_master_spot_ec2_instance" {
 #  key_name                       = "cl-dev-keypair"
 #  subnet_id                      = aws_subnet.rtu_bachelor_subnet_eu_north_1a.id
 #  vpc_security_group_ids         = [aws_security_group.rtu_bachelor_ssh_sg.id]
+#  associate_public_ip_address    = true
 #
 #  tags = {
 #    Arch         = "arm64"
@@ -388,6 +324,7 @@ resource "aws_spot_instance_request" "k3s_master_spot_ec2_instance" {
 #  key_name                       = "cl-dev-keypair"
 #  subnet_id                      = aws_subnet.rtu_bachelor_subnet_eu_north_1a.id
 #  vpc_security_group_ids         = [aws_security_group.rtu_bachelor_ssh_sg.id]
+#  associate_public_ip_address    = true
 #
 #  tags = {
 #    Arch         = "amd64"

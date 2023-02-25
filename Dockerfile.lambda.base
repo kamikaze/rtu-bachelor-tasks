@@ -1,0 +1,38 @@
+FROM python:3.11-slim-buster as build-image
+
+# Include global arg in this stage of the build
+ARG LAMBDA_TASK_ROOT
+
+RUN mkdir -p ${LAMBDA_TASK_ROOT}
+
+# Install aws-lambda-cpp build dependencies
+RUN apt-get update && \
+  apt-get install -y \
+  g++ \
+  curl \
+  make \
+  cmake \
+  unzip \
+  libcurl4-openssl-dev
+
+#RUN mkdir -p ${LAMBDA_TASK_ROOT}/.aws-lambda-rie && curl -Lo ${LAMBDA_TASK_ROOT}/.aws-lambda-rie/aws-lambda-rie \
+#https://github.com/aws/aws-lambda-runtime-interface-emulator/releases/latest/download/aws-lambda-rie \
+#&& chmod +x ${LAMBDA_TASK_ROOT}/.aws-lambda-rie/aws-lambda-rie
+
+# Install the function's dependencies
+RUN pip install --target ${LAMBDA_TASK_ROOT} awslambdaric
+
+
+FROM python:3.11-slim-buster
+
+# Include global arg in this stage of the build
+ARG LAMBDA_TASK_ROOT
+# Set working directory to function root directory
+WORKDIR ${LAMBDA_TASK_ROOT}
+
+# Copy in the built dependencies
+COPY --from=build-image ${LAMBDA_TASK_ROOT} ${LAMBDA_TASK_ROOT}
+
+#ENTRYPOINT [ "/var/task/.aws-lambda-rie/aws-lambda-rie", "/usr/local/bin/python", "-m", "awslambdaric" ]
+
+ENTRYPOINT [ "/usr/local/bin/python", "-m", "awslambdaric" ]

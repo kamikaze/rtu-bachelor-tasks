@@ -18,6 +18,11 @@ variable "rds_enabled" {
   default = false
 }
 
+variable "rds_replica_enabled" {
+  type    = bool
+  default = false
+}
+
 variable "db_username" {
   type        = string
   nullable    = false

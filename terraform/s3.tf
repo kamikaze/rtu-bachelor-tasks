@@ -14,11 +14,11 @@ resource "aws_s3_bucket" "rtu_dataset_transport_raw" {
   }
 }
 
-resource "aws_s3_bucket_acl" "rtu_dataset_transport_raw_acl" {
-  count  = var.s3_enabled ? 1 : 0
-  bucket = aws_s3_bucket.rtu_dataset_transport_raw[count.index].id
-  acl    = "private"
-}
+#resource "aws_s3_bucket_acl" "rtu_dataset_transport_raw_acl" {
+#  count  = var.s3_enabled ? 1 : 0
+#  bucket = aws_s3_bucket.rtu_dataset_transport_raw[count.index].id
+#  acl    = "private"
+#}
 
 resource "aws_s3_bucket_public_access_block" "rtu_dataset_transport_raw_pab" {
   count  = var.s3_enabled ? 1 : 0
@@ -44,11 +44,11 @@ resource "aws_s3_bucket" "rtu_dataset_transport_gen" {
   }
 }
 
-resource "aws_s3_bucket_acl" "rtu_dataset_transport_gen_acl" {
-  count  = var.s3_enabled ? 1 : 0
-  bucket = aws_s3_bucket.rtu_dataset_transport_gen[count.index].id
-  acl    = "private"
-}
+#resource "aws_s3_bucket_acl" "rtu_dataset_transport_gen_acl" {
+#  count  = var.s3_enabled ? 1 : 0
+#  bucket = aws_s3_bucket.rtu_dataset_transport_gen[count.index].id
+#  acl    = "private"
+#}
 
 resource "aws_s3_bucket_public_access_block" "rtu_dataset_transport_gen_pab" {
   count  = var.s3_enabled ? 1 : 0
@@ -74,8 +74,8 @@ resource "aws_s3_bucket" "rtu_dataset_transport_thumb" {
   }
 }
 
-resource "aws_s3_bucket_acl" "rtu_dataset_transport_thumb_acl" {
-  count  = var.s3_enabled ? 1 : 0
-  bucket = aws_s3_bucket.rtu_dataset_transport_thumb[count.index].id
-  acl    = "public-read"
-}
+#resource "aws_s3_bucket_acl" "rtu_dataset_transport_thumb_acl" {
+#  count  = var.s3_enabled ? 1 : 0
+#  bucket = aws_s3_bucket.rtu_dataset_transport_thumb[count.index].id
+#  acl    = "public-read"
+#}

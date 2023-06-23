@@ -2,9 +2,17 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 4.55"
+      version = "~> 5.5.0"
     }
   }
 
-  required_version = ">= 1.2.0"
+  backend "s3" {
+    bucket = "rtu-infra"
+    key    = "global/terraform.tfstate"
+    region = "eu-north-1"
+    profile = "rtu"
+    dynamodb_table = "rtu_infra_tf_lockid"
+  }
+
+  required_version = ">= 1.5.0"
 }

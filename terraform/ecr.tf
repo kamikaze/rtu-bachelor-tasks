@@ -6,6 +6,12 @@ resource "aws_ecr_repository" "lambda_python_runtime" {
 #    prevent_destroy = true
 #  }
 
+  lifecycle {
+    ignore_changes = [
+      name,
+    ]
+  }
+
   tags = {
     Name         = "lambda-python-runtime"
     Organization = "RTU"
@@ -19,6 +25,12 @@ resource "aws_ecr_repository" "dataset_image_converter" {
   #  lifecycle {
   #    prevent_destroy = true
   #  }
+
+  lifecycle {
+    ignore_changes = [
+      name,
+    ]
+  }
 
   tags = {
     Name         = "dataset-image-converter"

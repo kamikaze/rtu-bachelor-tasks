@@ -3,6 +3,11 @@ variable "s3_enabled" {
   default = true
 }
 
+variable "lambda_enabled" {
+  type    = bool
+  default = true
+}
+
 variable "ecr_enabled" {
   type    = bool
   default = true

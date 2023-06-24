@@ -26,7 +26,7 @@ resource "aws_db_instance" "rtu_bachelor_db_master" {
 
   identifier              = "rtu-bachelor-db"
   engine                  = "postgres"
-  engine_version          = "15.2"
+  engine_version          = "15.3"
   db_name                 = "datasets"
   instance_class          = "db.t4g.micro"
   storage_type            = "gp2"
@@ -65,7 +65,7 @@ resource "aws_db_instance" "rtu_bachelor_db_ro_replica" {
   storage_type            = "gp2"
   backup_retention_period = 7
   availability_zone       = "eu-north-1${local.azs[count.index]}"
-  replicate_source_db     = aws_db_instance.rtu_bachelor_db_master[0].id
+  replicate_source_db     = aws_db_instance.rtu_bachelor_db_master[0].identifier
   maintenance_window      = "Sun:04:00-Sun:06:00"
   backup_window           = "02:00-03:00"
   apply_immediately       = true

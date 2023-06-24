@@ -25,7 +25,7 @@ EOF
 }
 
 resource "aws_lambda_function" "convert_s3_raw_image" {
-  count = var.s3_enabled ? 1 : 0
+  count = var.s3_enabled && var.lambda_enabled ? 1 : 0
   depends_on = [
     aws_ecr_repository.dataset_image_converter[0]
   ]
@@ -43,7 +43,7 @@ resource "aws_lambda_function" "convert_s3_raw_image" {
 }
 
 resource "aws_lambda_permission" "convert_s3_raw_image_s3_perm" {
-  count = var.s3_enabled ? 1 : 0
+  count = var.s3_enabled && var.lambda_enabled ? 1 : 0
   depends_on = [
     aws_lambda_function.convert_s3_raw_image
   ]
@@ -55,7 +55,7 @@ resource "aws_lambda_permission" "convert_s3_raw_image_s3_perm" {
 }
 
 resource "aws_s3_bucket_notification" "convert_s3_raw_image_s3_notification" {
-  count = var.s3_enabled ? 1 : 0
+  count = var.s3_enabled && var.lambda_enabled ? 1 : 0
   depends_on = [
     aws_lambda_permission.convert_s3_raw_image_s3_perm
   ]

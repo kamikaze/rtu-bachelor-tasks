@@ -1,3 +1,8 @@
+variable "asus_laptop_key" {
+  type    = string
+  default = ""
+}
+
 variable "s3_enabled" {
   type    = bool
   default = true

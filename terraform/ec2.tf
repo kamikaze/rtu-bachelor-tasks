@@ -4,7 +4,8 @@ resource "aws_spot_instance_request" "k3s_master_spot_ec2_instance" {
   count = var.ec2_enabled ? 1 : 0
   depends_on = [
     aws_subnet.rtu_bachelor_subnet_eu_north_1a,
-    aws_security_group.rtu_bachelor_ssh_sg
+    aws_security_group.rtu_bachelor_ssh_sg,
+    module.kamikaze_asus_laptop_key_pair
   ]
   ami                            = "ami-0c76bf0e69c8a6228"
   spot_price                     = "0.01"
@@ -12,7 +13,7 @@ resource "aws_spot_instance_request" "k3s_master_spot_ec2_instance" {
   instance_type                  = "t4g.small"
   instance_interruption_behavior = "stop"
   wait_for_fulfillment           = true
-  key_name                       = "cl-dev-keypair"
+  key_name                       = module.kamikaze_asus_laptop_key_pair.key_pair_name
   subnet_id                      = aws_subnet.rtu_bachelor_subnet_eu_north_1a.id
   vpc_security_group_ids         = [aws_security_group.rtu_bachelor_ssh_sg.id]
   associate_public_ip_address    = true

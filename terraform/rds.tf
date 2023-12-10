@@ -58,7 +58,7 @@ resource "aws_db_instance" "rtu_bachelor_db_ro_replica" {
     aws_db_subnet_group.rtu_bachelor_db_subnet_group,
     aws_db_instance.rtu_bachelor_db_master
   ]
-  count = var.rds_replica_enabled ? length(local.replicas) : 0
+  count = var.rds_enabled && var.rds_replica_enabled ? length(local.replicas) : 0
 
   identifier              = "rtu-bachelor-db-ro${local.replicas[count.index]}"
   instance_class          = "db.t4g.micro"

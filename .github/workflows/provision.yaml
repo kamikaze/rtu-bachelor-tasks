@@ -1,0 +1,94 @@
+name: Terraform
+
+on:
+  push:
+    paths: ['terraform/**']
+  pull_request:
+    paths: ['terraform/**']
+
+jobs:
+  terraform-plan:
+    runs-on: ubuntu-latest
+    environment: DEV
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init
+
+      - name: Terraform Validate
+        id: validate
+        working-directory: terraform
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        id: plan
+        env:
+          TF_VAR_admin_ssh_public_key: ${{ secrets.ADMIN_SSH_PUBLIC_KEY }}
+          TF_VAR_db_username: ${{ secrets.DB_USERNAME }}
+          TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+          TF_VAR_dataset_db_username: ${{ secrets.DATASET_DB_USERNAME }}
+          TF_VAR_dataset_db_password: ${{ secrets.DATASET_DB_PASSWORD }}
+          TF_VAR_github_token: ${{ secrets.FLUXCD_GITHUB_TOKEN }}
+          TF_VAR_github_org: ${{ github.repository_owner }}
+          TF_VAR_github_repository: ${{ github.event.repository.name }}
+          TF_VAR_git_infra_repo_url: "ssh://git@github.com:${{ github.repository_owner }}/${{ github.event.repository.name }}.git"
+          TF_VAR_dns_api_token: ${{ secrets.DNS_API_TOKEN }}
+          TF_VAR_dns_api_secret: ${{ secrets.DNS_API_SECRET }}
+        working-directory: terraform
+        run: terraform plan -no-color
+
+  terraform-apply:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: terraform-plan
+    runs-on: ubuntu-latest
+    environment: DEV
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init
+
+      - name: Terraform Apply
+        env:
+          TF_VAR_admin_ssh_public_key: ${{ secrets.ADMIN_SSH_PUBLIC_KEY }}
+          TF_VAR_db_username: ${{ secrets.DB_USERNAME }}
+          TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+          TF_VAR_dataset_db_username: ${{ secrets.DATASET_DB_USERNAME }}
+          TF_VAR_dataset_db_password: ${{ secrets.DATASET_DB_PASSWORD }}
+          TF_VAR_github_token: ${{ secrets.FLUXCD_GITHUB_TOKEN }}
+          TF_VAR_github_org: ${{ github.repository_owner }}
+          TF_VAR_github_repository: ${{ github.event.repository.name }}
+          TF_VAR_git_infra_repo_url: "ssh://git@github.com:${{ github.repository_owner }}/${{ github.event.repository.name }}.git"
+          TF_VAR_dns_api_token: ${{ secrets.DNS_API_TOKEN }}
+          TF_VAR_dns_api_secret: ${{ secrets.DNS_API_SECRET }}
+        working-directory: terraform
+        run: terraform apply -auto-approve -no-color

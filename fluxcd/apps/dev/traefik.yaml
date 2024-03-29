@@ -1,0 +1,141 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: dev-olegkorsak-com-cert
+  namespace: traefik
+spec:
+  secretName: dev-olegkorsak-com-tls
+  commonName: "*.olegkorsak.com"
+  dnsNames:
+  - "olegkorsak.com"
+  - "*.olegkorsak.com"
+  issuerRef:
+    name: le-issuer-dns
+    kind: ClusterIssuer
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: traefik
+  namespace: flux-system
+spec:
+  interval: 24h
+  url: https://traefik.github.io/charts
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
+kind: HelmRelease
+metadata:
+  name: traefik
+  namespace: traefik
+spec:
+  releaseName: traefik
+  targetNamespace: traefik
+  interval: 5m
+  dependsOn:
+#    - name: kube-prometheus-stack
+#      namespace: monitoring
+    - name: cert-manager
+      namespace: cert-manager
+  chart:
+    spec:
+      chart: traefik
+      version: "26.x"
+      sourceRef:
+        kind: HelmRepository
+        name: traefik
+        namespace: flux-system
+      interval: 5m
+  values:
+    additionalArguments:
+    - --api.insecure
+    - --log.level=DEBUG
+    - --accesslog=true
+    - --entrypoints.metrics.address=:8082
+    - --entrypoints.traefik.address=:9000
+    - --entrypoints.web.address=:8000
+    - --entrypoints.web.http.redirections.entryPoint.to=websecure
+    - --entrypoints.web.http.redirections.entryPoint.scheme=https
+    - --entrypoints.web.http.redirections.entrypoint.permanent=true
+    - --entrypoints.websecure.address=:443
+    ingressClass:
+      enabled: true
+      isDefaultClass: true
+    ingressRoute:
+      dashboard:
+        enabled: true
+    deployment:
+      kind: DaemonSet
+    metrics:
+      prometheus:
+        addRoutersLabels: true
+        addServicesLabels: true
+        entryPoint: metrics
+    persistence:
+      enabled: false
+    ports:
+      metrics:
+        expose: true
+        exposedPort: 8082
+        port: 8082
+      traefik:
+        expose: true
+        exposedPort: 9000
+        port: 9000
+        protocol: TCP
+      web:
+        expose: true
+        redirectTo:
+          port: websecure
+      websecure:
+        expose: true
+        exposedPort: 443
+        port: 443
+        protocol: TCP
+    providers:
+      kubernetesCRD:
+        allowCrossNamespace: true
+        allowEmptyServices: true
+        allowExternalNameServices: true
+        enabled: true
+        namespaces: [ ]
+      kubernetesIngress:
+        allowEmptyServices: true
+        allowExternalNameServices: true
+        enabled: true
+        namespaces: [ ]
+        publishedService:
+          enabled: false
+    securityContext:
+      capabilities:
+        add:
+          - NET_BIND_SERVICE
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+      runAsGroup: 0
+      runAsNonRoot: false
+      runAsUser: 0
+    service:
+      annotations:
+        external-dns.alpha.kubernetes.io/hostname: "olegkorsak.com, *.olegkorsak.com"
+        external-dns.alpha.kubernetes.io/ttl: "300"
+        service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+        service.beta.kubernetes.io/external-traffic: "OnlyLocal"
+      spec:
+        externalTrafficPolicy: Local
+    tlsStore:
+      default:
+        defaultCertificate:
+          secretName: dev-olegkorsak-com-tls
+#---
+#apiVersion: monitoring.coreos.com/v1
+#kind: ServiceMonitor
+#metadata:
+#  name: traefik-monitoring
+#  namespace: traefik
+#spec:
+#  selector:
+#    matchLabels:
+#      app.kubernetes.io/name: traefik
+#  endpoints:
+#    - port: metrics

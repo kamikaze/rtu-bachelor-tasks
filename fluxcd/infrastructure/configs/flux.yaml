@@ -1,0 +1,31 @@
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Provider
+metadata:
+  name: telegram
+  namespace: flux-system
+spec:
+  type: telegram
+  address: https://api.telegram.org
+  channel: "-4078307623"
+  secretRef:
+    name: telegram-token
+---
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Alert
+metadata:
+  name: reconciliation-alert
+  namespace: flux-system
+spec:
+  suspend: false
+  providerRef:
+    name: telegram
+  eventSeverity: info
+  eventSources:
+    - kind: GitRepository
+      name: flux-system
+    - kind: Kustomization
+      name: apps
+      namespace: flux-system
+  inclusionList:
+    - ".*finished.*"
+    - ".*stored artifact for commit.*"

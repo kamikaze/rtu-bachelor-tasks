@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rtu-bachelor-frontend-develop
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rtu-bachelor-backend-develop
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rtu-bachelor-frontend
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rtu-bachelor-backend

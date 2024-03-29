@@ -1,0 +1,104 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: label-studio
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: label-studio-aws-creds
+  namespace: label-studio
+spec:
+  refreshInterval: 5h
+
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: parameterstore
+
+  target:
+    creationPolicy: Owner
+
+  dataFrom:
+    - extract:
+        key: label-studio-aws-creds
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: label-studio-db-creds
+  namespace: label-studio
+spec:
+  refreshInterval: 5h
+
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: parameterstore
+
+  target:
+    creationPolicy: Owner
+
+  dataFrom:
+    - extract:
+        key: datasets-db-creds
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: heartex
+  namespace: flux-system
+spec:
+  interval: 24h
+  url: https://charts.heartex.com/
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
+kind: HelmRelease
+metadata:
+  name: label-studio
+  namespace: flux-system
+spec:
+  releaseName: label-studio
+  targetNamespace: label-studio
+  interval: 10m
+  chart:
+    spec:
+      chart: label-studio
+      version: "1.4.1"
+      sourceRef:
+        kind: HelmRepository
+        name: heartex
+        namespace: flux-system
+      interval: 10m
+  values:
+    global:
+      extraEnvironmentVars:
+        LABEL_STUDIO_HOST: "https://ls.olegkorsak.com"
+        LABEL_STUDIO_DISABLE_SIGNUP_WITHOUT_LINK: false
+      pgConfig:
+        host: "bixority-db-datasets.fdgd5dgyoplk.eu-north-1.rds.amazonaws.com"
+        dbName: "labelstudio"
+        userName: "dbuser"
+        password:
+          secretName: "label-studio-db-creds"
+          secretKey: "password"
+        ssl:
+          pgSslMode: "require"
+      persistence:
+        enabled: true
+        type: s3
+        config:
+          s3:
+            accessKeyExistingSecret: "label-studio-aws-creds"
+            accessKeyExistingSecretKey: "access_key"
+            secretKeyExistingSecret: "label-studio-aws-creds"
+            secretKeyExistingSecretKey: "secret_key"
+            bucket: "labelstudio"
+            region: "eu-north-1"
+    app:
+      ingress:
+        enabled: true
+        host: ls.olegkorsak.com
+        path: "/"
+        pathType: Prefix
+
+    postgresql:
+      enabled: false

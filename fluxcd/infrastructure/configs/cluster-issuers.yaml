@@ -1,0 +1,22 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: le-issuer-dns
+spec:
+  acme:
+    email: kamikaze.is.waiting.you@gmail.com
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: le-issuer-account-key
+    solvers:
+    - selector:
+        dnsZones:
+        - "olegkorsak.com"
+        - "dev.olegkorsak.com"
+      dns01:
+        cnameStrategy: Follow
+        cloudflare:
+          email: kamikaze.is.waiting.you@gmail.com
+          apiKeySecretRef:
+            name: dns-api-key
+            key: dns_api_key

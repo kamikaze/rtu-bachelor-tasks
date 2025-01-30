@@ -1,9 +1,9 @@
-dataset-format-benchmark==0.1.0
-dataset-image-annotator==0.1.0
+dataset-format-benchmark==0.2.2
+dataset-image-annotator==0.2.0
 kaggle==1.6.17
-jupyterlab==4.3.4
+jupyterlab==4.3.5
 matplotlib==3.10.0
-numpy==2.2.1
+numpy==2.2.2
 Pillow==11.1.0
 pytorch-lightning==2.5.0.post0
 scikit-learn==1.6.1

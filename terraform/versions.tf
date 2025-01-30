@@ -2,7 +2,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.38.0"
+      version = "~> 5.84.0"
     }
 
     flux = {
@@ -28,5 +28,5 @@ terraform {
     dynamodb_table = "tf_dev_infra_lockid"
   }
 
-  required_version = ">= 1.5.0"
+  required_version = ">= 1.10.0"
 }

@@ -4,7 +4,7 @@ Task solution for RTU bachelor work
 ## Installation
 
 ```bash
-python3.11 -m venv venv --upgrade-deps
+python3.12 -m venv venv --upgrade-deps
 source venv/bin/activate
 python -m pip install -U -r requirements_dev.txt
 

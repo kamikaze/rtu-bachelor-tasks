@@ -133,7 +133,7 @@ resource "aws_eks_node_group" "workers" {
   ami_type             = "AL2_ARM_64"
   capacity_type        = "ON_DEMAND"
   force_update_version = false
-  release_version      = "${var.eks_version}.0-20240209" # https://github.com/awslabs/amazon-eks-ami/blob/master/CHANGELOG.md
+  release_version      = "${var.eks_version}.0-20250123" # https://github.com/awslabs/amazon-eks-ami/blob/master/CHANGELOG.md
   labels = {
     role = "workers"
   }
